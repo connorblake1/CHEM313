@@ -1,0 +1,142 @@
+Paper
+
+Diffusion Denoising Probabilistic Model DDPM
+    inptus get gaussianed to death and mapped to mean 0 uncorrelated Gaussian global prior at T
+    the weights are learned to unnoise it and extract samples (generative)
+
+REMD "replica exchange molecular dynamics" Sugita / Okamoto
+    exchanges noninteracting replicas of the system of interest at different temperatures
+    intuition is that by exchanging two systems (and rescaling momenta to obey 3 kbT/2), the high temperature ergodicity can be injected into the low temperature areas for more efficienct sampling
+        only exchanged with Metropolis acceptance/rejection criterion
+AIB9
+    9 AIB 2-Aminoisobutyric acid - non proteinogenic
+    chosen because rapidly folds into left and right handed helices
+    no side chains - pure backbone
+    used for benchmarking forcefields/solvation
+
+REMD:   
+    10 temperatures
+    opportunity for exchange every 20 ps for a couple of microseconds
+        1-2% acceptance rate
+        lower than usual 15% to demonstrate that low #s of replicas still work
+        CHARM TS ~ 2 fs
+DDPM
+    REMD trajectory samples are as training data for the DDPM, the actual average KE not the sim T are used as the data
+        shows significant fluctuations proportional to 1/sqrt(N) where N = DOFs
+        this means that any data looks more like a sample from a joint PDF where T is also a random var
+    TODO: what is the intuition for why it's better?
+
+GOAL
+    use sparse samples of ramachandran angles to generate joint dist p(x,beta) at any temperature and coordinate
+    
+KEY TAKEAWAYS   
+    REMD ok
+    DDPM trained on REMD captures excited states and transition pathways much better
+    DDPM+REMD is able to extrapolate below sample temp ranges, interpolate nonexistent ones in AIB9
+    for system parameters that fluctuate meaningfully on the timescales/size scales, they can be treated as random variables to be 
+
+    RNA
+        GACC is an RNA tetranuclide that has weird configurations  that are also hard to sample from
+        REMD+DDPM beats another REMD simulation with 1/16 as much data (12 microseconds total vs 192)
+
+
+questions
+    doesn't this only work then if N is somewhat small so that the temperature is meaningfully an RV on all scales?
+    
+structure
+    describe intuition for what they are trying to do
+    show results
+    discuss limitations
+        very few "enforced latent" variables
+
+
+
+
+NOTES
+CHALLENGES SLIDE
+-nucleic acids and oligopeptides/small proteins have some critical conformation behavior
+    -on Monday Tommy and Joshua talked about Boltzmann Generators to study BPTI which is a 58 residue protein known for having long transition times between its different conformations 
+        -X and O conformations (Anton 1 ms simulation by DE Shaw)
+    -RNA has hours-long timescales for base-pair separation (h-bonds), microseconds for other conformational changes, picoseconds for slight deformations - 15 orders of magnitude
+    -Hot systems are very ergodic even on short time scales, so it would be very nice to be able to translate what is learned at high temperatures to much lower ones
+-Why AIB9?
+    -9 residue oligopeptide of a non proteinogenic amino acid
+    -chosen because AIB has no rotateable sidechains so the Ramachandran dihedral angles describe it very well
+    -it forms both left and right handed helices almost instantly and both are stable so it's a good toy system
+    -in unbiased MD, 2-3 transitions per 4 microseconds - fast enough to simulate and have ground truth, slow enough to be nontrivial
+
+NOTATION SLIDE
+-these are some numbers to keep in mind for the size of the systems and algorithms
+-the actual diffusion model is only going to generate samples on N', so this is not a very big model compared to modern diffusion models (and it needs a lot less data to train)
+-in the simulation data, $\beta$ is also measured at each point in time as a function of the average kinetic energy at that snapshot. -$\beta$ can be treated here as another random variable
+-KEY MOTIVATION: being able to sample from latent dist where temperature is included => you have a multitemperature model   
+
+DDPM REVIEW SLIDE
+-alpha is a hyperparameter that sets the noising schedule
+-the training data is going to be time snapshots of MD trajectories
+
+DDPM ARCHITECTURE SLIDE 6.5
+-this is the model for each denoising step
+-this model is adapted from an image diffusion model
+-"residue block" is 2 convolutions with a kernel and then a group normalization
+-upsampling copies so that the features can be processed multiple times
+-basically a typical CNNs image processing model (U-net) to process both high level and low level features
+-there are 1000 of these steps to take from maximally diffused to final output
+-cost of this network is exponentially expensive which is why N' << N
+
+
+REMD SLIDE 8
+-the intuition here is that for a big separation between the temperatures, the higher ones are much more ergodic but the lower ones are much more realistic. After running this for a while, this lets the colder ones sample a larger set of possible low-energy state than they otherwise would
+-Some numbers: 4 microsecond simulations, 2fs GROMACS timestep, 20 picosecond exchange opportunities, ~2% acceptance rates
+
+METHOD SLIDE
+-everything up to now is old results
+-intuition: REMD does not properly exploit the fact temperature fluctuates and is really not a control paremeter but an observable to the system
+-optimizes variational bound on the negative log likelihood
+
+AIB9 SLIDE 1
+-geometric spacing of temperatures 400 to 518
+-looking at Ramachandran angles
+-DDPM+REMD (labeled DDPM) is able to infer and accurately predict the existence and location of transition states (5) and the entire Ra excited state on residue 8.
+-note there are some severe hallucinations
+-intuitvely, DDPM+REMD seems to be better incorporating high temperature sampling of the more rare states into the lowest temperature model
+
+AIB9 SLIDE 2
+-They've now taken the same set of temperatures, dropped out 400K, and retrained everything (lowest temp 412K)
+-extrapolating now to 400K, they are measuring the free energy of the metastable excited states relative to the Right helix ground states.
+-REMD can't do this
+-Note that these are not great, and they offer no RMSE on the in-distribution DeltaG predictions so it's a bit fishy
+
+GACC SLIDE 1
+-In analogy to Ramachandran dihedral angles, RNA backbone described by dihedral angles
+    -one of the biggest drawbacks of this model is its low-dimensional parametrization
+-this tetranucleotide was chosen for its flexibility
+
+GACC SLIDE 2
+-DDPM has successfully found a metastable state that was not in the 325K REMD data set and incorporated it
+
+SUMMARY SLIDE 1 
+-has the same goal as Tommy and Joshua's paper: understand and efficiently sample from equilibrium Boltzmann distributions
+-this paper
+    -must use compressed representation not all-atom
+    -can have explicit solvents (impossible in Boltzmann generator)
+    -less likely to hallucinate because of reduced coords
+-Boltzmann generator is required to use implicit model because of global invariance via discarding global 6DOF
+    -though does model a much larger protein (58 residues)
+    -their paper has to rerelax the model and it not purely generated
+
+SUMMARY SLIDE 2
+-basically a post-processing technique (meaning can be tacked on to improve base REMD)
+-same concept could be used to look at other quantities with meaningful fluctuations
+
+
+
+    Tommy and Joshua CompareContrast https://arxiv.org/pdf/1812.01729
+        both trying to estimate Boltzmann dists of large biomolecules
+        that method tries to map the complicated distribution that's hard to sample from to a simple latent sampleable distribution
+        their reaction coordinates can be created by linear interp in latent space
+        usually diffusion models train by samples and then probs weights
+        
+        
+    
+           

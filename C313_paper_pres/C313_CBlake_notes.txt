@@ -1,0 +1,77 @@
+NOTES
+CHALLENGES SLIDE
+-nucleic acids and oligopeptides/small proteins have some critical conformation behavior
+    -on Monday Tommy and Joshua talked about Boltzmann Generators to study BPTI which is a 58 residue protein known for having long transition times between its different conformations 
+        -X and O conformations (Anton 1 ms simulation by DE Shaw)
+    -RNA has hours-long timescales for base-pair separation (h-bonds), microseconds for other conformational changes, picoseconds for slight deformations - 15 orders of magnitude
+    -Hot systems are very ergodic even on short time scales, so it would be very nice to be able to translate what is learned at high temperatures to much lower ones
+-Why AIB9?
+    -9 residue oligopeptide of a non proteinogenic amino acid
+    -chosen because AIB has no rotateable sidechains so the Ramachandran dihedral angles describe it very well
+    -it forms both left and right handed helices almost instantly and both are stable so it's a good toy system
+    -in unbiased MD, 2-3 transitions per 4 microseconds - fast enough to simulate and have ground truth, slow enough to be nontrivial
+
+NOTATION SLIDE
+-these are some numbers to keep in mind for the size of the systems and algorithms
+-the actual diffusion model is only going to generate samples on N', so this is not a very big model compared to modern diffusion models (and it needs a lot less data to train)
+-in the simulation data, $\beta$ is also measured at each point in time as a function of the average kinetic energy at that snapshot. -$\beta$ can be treated here as another random variable
+-KEY MOTIVATION: being able to sample from latent dist where temperature is included => you have a multitemperature model   
+
+DDPM REVIEW SLIDE
+-alpha is a hyperparameter that sets the noising schedule
+-the training data is going to be time snapshots of MD trajectories
+
+DDPM ARCHITECTURE SLIDE 6.5
+-this is the model for each denoising step
+-this model is adapted from an image diffusion model
+-"residue block" is 2 convolutions with a kernel and then a group normalization
+-upsampling copies so that the features can be processed multiple times
+-basically a typical CNNs image processing model (U-net) to process both high level and low level features
+-there are 1000 of these steps to take from maximally diffused to final output
+-cost of this network is exponentially expensive which is why N' << N
+
+
+REMD SLIDE 8
+-the intuition here is that for a big separation between the temperatures, the higher ones are much more ergodic but the lower ones are much more realistic. After running this for a while, this lets the colder ones sample a larger set of possible low-energy state than they otherwise would
+-Some numbers: 4 microsecond simulations, 2fs GROMACS timestep, 20 picosecond exchange opportunities, ~2% acceptance rates
+
+METHOD SLIDE
+-everything up to now is old results
+-intuition: REMD does not properly exploit the fact temperature fluctuates and is really not a control paremeter but an observable to the system
+-optimizes variational bound on the negative log likelihood
+
+AIB9 SLIDE 1
+-geometric spacing of temperatures 400 to 518
+-looking at Ramachandran angles
+-DDPM+REMD (labeled DDPM) is able to infer and accurately predict the existence and location of transition states (5) and the entire Ra excited state on residue 8.
+-note there are some severe hallucinations
+-intuitvely, DDPM+REMD seems to be better incorporating high temperature sampling of the more rare states into the lowest temperature model
+
+AIB9 SLIDE 2
+-They've now taken the same set of temperatures, dropped out 400K, and retrained everything (lowest temp 412K)
+-extrapolating now to 400K, they are measuring the free energy of the metastable excited states relative to the Right helix ground states.
+-REMD can't do this kind of extrapolation
+-Note that these are not great, and they offer no RMSE on the in-distribution DeltaG predictions so it's a bit fishy
+
+GACC SLIDE 1
+-In analogy to Ramachandran dihedral angles, RNA backbone described by dihedral angles
+    -one of the biggest drawbacks of this model is its low-dimensional parametrization
+-this tetranucleotide was chosen for its flexibility
+
+GACC SLIDE 2
+-DDPM has successfully found a metastable state that was not in the 325K REMD data set and incorporated it
+
+SUMMARY SLIDE 1 
+-has the same goal as Tommy and Joshua's paper: understand and efficiently sample from equilibrium Boltzmann distributions
+-this paper
+    -must use compressed representation not all-atom
+    -can have explicit solvents (impossible in Boltzmann generator)
+    -less likely to hallucinate because of reduced coords
+-Boltzmann generator is required to use implicit model because of global invariance via discarding global 6DOF
+    -though does model a much larger protein (58 residues)
+    -their paper has to reweight the samples which is a major drawback of fully generating atomic coordinates
+
+SUMMARY SLIDE 2
+-basically a post-processing technique (meaning can be tacked on to improve base REMD)
+-same concept could be used to look at other quantities with meaningful fluctuations
+

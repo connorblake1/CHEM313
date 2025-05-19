@@ -1,12 +1,50 @@
 CHEM 313 Final Project proposal
 
-Connor Blake
-
     Recently [1], a neural network-based approach for approximating reaction committors has been used to obtain accurate transition rates in molecular systems. It combines a novel sampling method with a logarithmic committor loss function, but it uses a simple feed-forward neural network and highly naive all-pairs distance function for its molecular configuration model. The authors acknowledge the ability to improve with more suitable data structures and algorithms in these areas, but leave it to a further work.
     I would like to improve on these methods with GCNs/GNNs/CNNs to see how significant these speed or accuracy improvements can be. They also discuss the challenge of handling metastable transition states with their sampling technique, so I would like to explore some of the Markov state models [2] they allude to as possible algorithmic fixes.
     There is some code available from the original paper as a starting point, and the simpler toy models appear to be tractable on my personal laptop.
-
+x
 
 [1] Committor Guided Estimates of Molecular Transition Rates, Mitchell & Rotskoff
 
 [2] Markov state models of biomolecular conformational dynamics, Chodera & Noé
+
+
+
+
+Notes
+
+2d MB potential
+flux_sample:
+    computes N_exit positions and times for a particle starting in center of basin to hit the *boundary* of *its own* basin
+    this estimates the exist fluxes and gives a distribution j_A_-for *where* it exits
+    1000 each
+take_reporter_steps
+    take a point on a boundary of a basin
+    off of an initial point, n_traj=5 trajectories are shot off
+calculate_committor_estimates
+    uses the net to predict on a trajectory sample
+
+MB.py
+    generates the flux sample
+    for N steps:
+        take the lowest energy swarm point since last step (X_xs or boundary point of X basin)
+        take_reporter_steps from X_xs
+        take the reporter swarm, feed to committor predictor
+            snap anything in basins to 0,1, calculate mean estimates of swarm committors
+        concatenate to X_running_short_reporters (full history of swarm)
+        gradient NN on the self-consistence expectation of log committor thing on all data up to point (even swarm stopping points)
+
+        calcualte transition probability: j_A_- \int q(x) dx (on boundary) where the j_A_- is estimate from the initial flux (this is the "Hill Relation")
+
+
+
+TODO:
+    1. get the committor estimates running for the MD simulations of AIB9
+    2. investigate the metastability problem in Aib9
+    3. make theoretical fix
+    4. implement it
+    5. presentation
+
+        
+        
