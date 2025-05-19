@@ -28,7 +28,7 @@ calculate_committor_estimates
 MB.py
     generates the flux sample
     for N steps:
-        take the lowest energy swarm point since last step (X_xs or boundary point of X basin)
+        take the highest committor point since last step (X_xs or boundary point of X basin)
         take_reporter_steps from X_xs
         take the reporter swarm, feed to committor predictor
             snap anything in basins to 0,1, calculate mean estimates of swarm committors
@@ -38,7 +38,6 @@ MB.py
         calcualte transition probability: j_A_- \int q(x) dx (on boundary) where the j_A_- is estimate from the initial flux (this is the "Hill Relation")
 
 
-
 TODO:
     1. get the committor estimates running for the MD simulations of AIB9
     2. investigate the metastability problem in Aib9
@@ -46,5 +45,10 @@ TODO:
     4. implement it
     5. presentation
 
-        
+
+
+
+
+
+
         
