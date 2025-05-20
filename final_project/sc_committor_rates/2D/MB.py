@@ -14,7 +14,6 @@ cmap3 = LinearSegmentedColormap.from_list("mycmap3", ['#1B346C','#ffffff','#F54B
 cmap4 = LinearSegmentedColormap.from_list("mycmap4", ['#ffffff','#F54B1A'])
 cmap5 = LinearSegmentedColormap.from_list("mycmap5", ['#000000','#000000'])
 cmap6 = LinearSegmentedColormap.from_list("mycmap5", ['#ffffff','#ffffff'])
-# from matplotlib.cm import matplotlib.colormaps.register
 matplotlib.colormaps.register(name="mycmap",cmap=cmap)
 matplotlib.colormaps.register(name="mycmap2",cmap=cmap2)
 matplotlib.colormaps.register(name="mycmap3",cmap=cmap3)
@@ -61,7 +60,7 @@ class CommittorNet(torch.nn.Module):
         prediction = self.Block(x)
         return prediction.squeeze()
 # Set dynamical parameters for the optimiziation
-k = torch.tensor([100.]).to(device) # The harmonic force constant for umbrella sampling around committor values TODO:CB what?
+# k = torch.tensor([100.]).to(device) # The harmonic force constant for umbrella sampling around committor values TODO:CB what?
 beta = torch.tensor([1.0]).to(device) # Inverse kT for our system
 sampling_beta = torch.tensor([0]).to(device) # We can sample at a higher temperature
 gamma = torch.tensor([1]).to(device) # Friction coefficient for Langevin dynamics
