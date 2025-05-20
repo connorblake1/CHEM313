@@ -383,7 +383,7 @@ def flux_sample(V, beta, gamma, step_size, a_center, b_center, basin_cutoff, n_c
         for i in range(stride):
             x = Langevin_step(x, V, beta, gamma, step_size)
         n_steps += stride
-        print(x)
+        # print(x)
         if torch.sqrt(torch.sum(torch.square(x - a_center))) > basin_cutoff and in_basin:
             just_left_flag = True
             #print("Leaving Basin")

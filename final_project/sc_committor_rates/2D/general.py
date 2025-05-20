@@ -198,20 +198,25 @@ for trial in range(1): # Can run multiple trials, if you'd like
             fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
             fig.set_size_inches(15.2, 4.8)
             axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(-5, 0, 15), cmap = 'mycmap')
-            fig.colorbar(axs['a'].contour(X, Y, torch.sigmoid(net(grid_input)).cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap = 'mycmap2'), ax = axs['a'], ticks = np.linspace(0, 1, 11))
+            fig.colorbar(axs['a'].contour(X, Y, torch.sigmoid(net(grid_input)).cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap ="spring"), ax = axs['a'], ticks = np.linspace(0, 1, 11))
             axs['a'].scatter(torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
             axs['a'].scatter(torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'blue', alpha = 1)
             axs['a'].scatter(torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'green', alpha = 1)
-            axs['a'].add_patch(plt.Circle(a_center, cutoff, linewidth = 2, color = 'black', fill = True))
-            axs['a'].add_patch(plt.Circle(b_center, cutoff, linewidth = 2, color = 'black', fill = True))
-            axs['a'].text(a_center[0],a_center[1], "A", weight = 'bold', size = 20, color = 'white')
-            axs['a'].text(b_center[0],b_center[1], "B", weight = 'bold', size = 20, color = 'white')
+            axs['a'].add_patch(plt.Circle(a_center, cutoff, linewidth = 2, color = 'red', fill = True))
+            axs['a'].add_patch(plt.Circle(b_center, cutoff, linewidth = 2, color = 'green', fill = True))
+            # axs['a'].text(a_center[0]-.04,a_center[1]-.04, "A", weight = 'bold', size = 15, color = 'white')
+            # axs['a'].text(b_center[0]-.04,b_center[1]-.04, "B", weight = 'bold', size = 15, color = 'white')
+            axs['a'].plot([], [], color='red', label='A')
+            axs['a'].plot([], [], color='green', label='B')
             axs['a'].set_xlabel(r"x", size = 16)
             axs['a'].set_ylabel(r"y", size = 16)
+
             #axs['a'].contour(X, Y, V_surface.cpu().detach().numpy(), levels = np.linspace(0., 0, 1), cmap = 'mycmap5')
             axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(0, 1e20, 2), cmap = 'mycmap6', zorder = 100)
-            axs['a'].text(-1.95, -1.35, r"e", weight = 'bold', size = 20, zorder = 200)
-                
+            axs['a'].set_xlim(x[0],x[-1])
+            axs['a'].set_ylim(y[0],y[-1])
+            axs['a'].legend()
+
             
 
             axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(a_means), c = '#1B346C')
