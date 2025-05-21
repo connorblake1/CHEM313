@@ -270,5 +270,6 @@ plt.savefig(mpath(run_name+"_committor.pdf"))
 #plt.close()
 print("SAVING")
 torch.save(net.state_dict(), mpath(run_name+ ".pt"))
+torch.save(running_xs, mpath(run_name+"_rxs.pt"))
 
 

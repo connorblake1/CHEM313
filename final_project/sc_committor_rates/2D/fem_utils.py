@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import math
+from dolfin import parameters
+parameters["form_compiler"]["quadrature_degree"] = 8
 
 def compute_committor(V_expr,
                       a_center, b_center,
@@ -22,7 +24,16 @@ def compute_committor(V_expr,
     # --- build fine FEM mesh -------------------------------------------------
     mesh = RectangleMesh(Point(x_min, y_min), Point(x_max, y_max),
                          mesh_Nx, mesh_Ny, "crossed")
-    V_space = FunctionSpace(mesh, "CG", 1)
+    # refine around A
+    cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
+    cell_markers.set_all(False)
+    for cell in cells(mesh):
+        mp = cell.midpoint()
+        if mp.distance(Point(a_center[0], a_center[1])) < 2.0 * radius:
+            cell_markers[cell] = True
+    mesh = refine(mesh, cell_markers)
+
+    V_space = FunctionSpace(mesh, "CG", 2)
 
     # --- Dirichlet regions ---------------------------------------------------
     A_sub = CompiledSubDomain("pow(x[0]-xa,2)+pow(x[1]-ya,2) < r*r",
@@ -45,24 +56,33 @@ def compute_committor(V_expr,
     q_sol = Function(V_space)
     solve(a_form == L_form, q_sol, [bc_A, bc_B])
 
-    # rate computation
-   # --- mark boundary facets for A -------------
-    facet_markers = MeshFunction("size_t", mesh, mesh.topology().dim()-1, 0)
-    A_sub.mark(facet_markers, 1)
-    ds = Measure("ds", domain=mesh, subdomain_data=facet_markers)
+    # # --- rate computation with higher precision  -----------------------
 
-    # outward normal
-    n = FacetNormal(mesh)
+    # # 1) Project onto a higher‐order space (e.g. quadratic) for better gradients
+    # P2 = FunctionSpace(mesh, "CG", 2)
+    # q_high = interpolate(q_sol, P2)
+    # grad_q = project(grad(q_high), VectorFunctionSpace(mesh, "CG", 2))
 
-    # interpolate ρ and ∇q
-    V_func = interpolate(V_expr, V_space)
-    rho    = project(exp(-beta*V_func), V_space)
-    grad_q = project(grad(q_sol), VectorFunctionSpace(mesh, "CG", 1))
+    # # 2) Recompute rho on P2 as well (optional but consistent)
+    # V_high = interpolate(V_expr, P2)
+    # rho_high = project(exp(-beta * V_high), P2)
 
-    # --- surface flux integral over ∂A (marker=1) ---
-    flux_form = - (1.0/beta) * rho * dot(grad_q, n) * ds(1)
-    k = assemble(flux_form)
-    print("RATE                 ",k)
+    # # 3) Mark ∂A facets as before
+    # facet_markers = MeshFunction("size_t", mesh, mesh.topology().dim()-1, 0)
+    # A_sub.mark(facet_markers, 1)
+    # dsA = Measure("ds", domain=mesh, subdomain_data=facet_markers,
+    #               metadata={"quadrature_degree": 8})
+
+    # n = FacetNormal(mesh)
+
+    # # 4) Define the high‐precision flux form
+    # flux_form = - (1.0/beta) * rho_high * dot(grad_q, n) * dsA(1)
+
+    # # 5) Assemble with an explicit compiler hint for quadrature
+    # k = assemble(flux_form,
+    #              form_compiler_parameters={"quadrature_degree": 8})
+
+    # print("High‐precision surface flux k =", k)
 
     # --- sample on regular nx×ny grid ----------------------------------------
     xs = np.linspace(x_min, x_max, nx)
@@ -74,11 +94,9 @@ def compute_committor(V_expr,
         for j in range(ny):
             Q[i, j] = q_sol(Point(X[i, j], Y[i, j]))
 
-    Q = 1.-np.clip(Q,0.,1.)
+    Q = 1.0 - np.clip(Q, 0.0, 1.0)
     np.save(out_file + ".npy", Q)
     return Q
-
-
 
 def compare_committors(a, b, X, Y, filename, eps=1e-8, title_1 ='Committor (Exact Computed)', title_2 = 'Committor (Computed)'):
     """

@@ -17,7 +17,7 @@ class CommittorNet(torch.nn.Module):
 device = torch.device('cpu')
 
 mpath = lambda name: os.path.join("run_data",name)
-validation_mode = True # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
+validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
 if validation_mode:
     from fem_utils import *
 
@@ -124,13 +124,13 @@ if validation_mode:
 
 
 ## Improved General Transition Well
-key = "triangle"
-key_param = 3
+key = "linear"
+key_param = 5
 run_name = "wells_" + key
 
 run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 1
+b_i = 3
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
 nice_name = ""
