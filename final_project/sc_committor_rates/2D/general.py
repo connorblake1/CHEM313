@@ -4,7 +4,7 @@ import torch
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size
+from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size, nice_name, mpath
 import json
 import os
 from json import JSONDecodeError
@@ -84,7 +84,8 @@ print(V(grid_input.reshape(-1,dim)))
 print(V(grid_input.reshape(-1,dim)).size())
 print(X.size())
 V_surface = V(grid_input.reshape((-1, dim))).reshape(X.size())
-
+V_surface_numpy = V_surface.cpu().detach().numpy()
+V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
 print("Calculating Flux...")
@@ -226,7 +227,7 @@ for trial in range(1): # Can run multiple trials, if you'd like
             plt.tight_layout()
             fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
             fig.set_size_inches(15.2, 4.8)
-            axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(-5, 10, 15), cmap = 'mycmap',zorder=0)
+            axs['a'].contourf(X,Y, V_surface_numpy, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap',zorder=0)
             
             fig.colorbar(axs['a'].contour(X, Y, torch.sigmoid(net(grid_input)).cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap ="spring"), ax = axs['a'], ticks = np.linspace(0, 1, 11))
             axs['a'].scatter(torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
@@ -258,16 +259,16 @@ for trial in range(1): # Can run multiple trials, if you'd like
             axs['b'].legend([r'Rate Estimate A to B', r'Rate Estimate B to A', r'Analytical Rate'], prop={'size': 12})
             axs['b'].set_ylim(1e-8, 1e1)
             plt.tight_layout()
-            fig.savefig(run_name + ".pdf")
+            fig.savefig(mpath(run_name + ".pdf"))
             plt.close()
         
 
 # Plot the final committor
-plt.contourf(X,Y, V_surface, levels = np.linspace(-5, 0, 15), cmap = 'mycmap')
+plt.contourf(X,Y, V_surface, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap')
 plt.contour(X, Y, net(grid_input).detach().numpy(), levels = np.linspace(0.1, 0.9, n_windows), cmap = 'mycmap2')
-plt.savefig("./Committor_"+run_name+".pdf")
+plt.savefig(mpath(run_name+"_committor.pdf"))
 #plt.close()
 print("SAVING")
-torch.save(net.state_dict(), f"./{run_name}.pt")
+torch.save(net.state_dict(), mpath(run_name+ ".pt"))
 
 

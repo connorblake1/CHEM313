@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from utils import gen_V_contour
+from utils import *
 
 class CommittorNet(torch.nn.Module):
     def __init__(self, dim):
@@ -15,6 +15,12 @@ class CommittorNet(torch.nn.Module):
         prediction = self.Block(x)
         return prediction.squeeze()
 device = torch.device('cpu')
+
+mpath = lambda name: os.path.join("run_data",name)
+validation_mode = True # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
+if validation_mode:
+    from fem_utils import *
+
 
 
 ## TC
@@ -118,17 +124,24 @@ device = torch.device('cpu')
 
 
 ## Improved General Transition Well
-key = "linear"
-key_param = 5
+key = "triangle"
+key_param = 3
 run_name = "wells_" + key
+
 run_name = run_name + "_" + str(key_param)
 a_i = 0
 b_i = 1
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
-dim = 2
+nice_name = ""
+if key == "linear":
+    nice_name = f"{key_param} Linear Wells (A={a_i+1}, B={b_i+1})"
+elif key == "triangle":
+    nice_name= f"{key_param} Wells"
 
-def make_V_from_centers(centers, a=9.2, b=0.2, c_soft=0.1, c_hard=5.0, margin=3.5):
+dim = 2
+b_default = -20.
+def make_V_from_centers(centers):
     # def V(x): # gaussian, too much leakage
     #     # x: shape (N, 2)
     #     diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
@@ -143,7 +156,7 @@ def make_V_from_centers(centers, a=9.2, b=0.2, c_soft=0.1, c_hard=5.0, margin=3.
     #     V_confine = c_soft * r2 * soft_mask + c_hard * r2 * hard_mask
 
     #     return V_wells + V_confine + 2*c_hard*x[:,1]**2                     # (N,)
-    def V(x, b=-20.):
+    def V(x, b=b_default):
         diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
         sq_dist = torch.sum(diff**2, dim=-1)            # (N, M)
         return -torch.logsumexp(b*sq_dist,dim=1)
@@ -154,7 +167,7 @@ def line_centers(K, spacing=1.5):
     x = torch.linspace(-(K-1)/2, (K-1)/2, K) * spacing
     return torch.stack([x, torch.zeros_like(x)], dim=1)  # shape (K,2)
 
-def triangle_centers(K,radius=1):
+def triangle_centers(K,radius=.9):
     # 3 wells at 120° intervals in 2D
     angles = torch.tensor([0, 2*np.pi/3, 4*np.pi/3])
     angles = angles[:K]
@@ -197,5 +210,45 @@ b_center = kcenters[b_i].to(device)
 # b_center = torch.tensor([0.,0.]).to(device)
 cutoff = torch.tensor([0.1]).to(device)
 x,y = bounds(kcenters)
+gen_V_contour(x,y,V,nice_name,mpath(run_name+"_contour.png"),a_center,b_center,None)
 
-gen_V_contour(x,y,V,run_name+"_contour.png",a_center=a_center,b_center=b_center)
+
+if validation_mode:
+    X,Y = torch.meshgrid(x,y)
+    # generates NN commitor npy file
+    if os.path.exists(mpath(run_name + ".pt")):
+        evaluate_committor_on_grid(mpath(run_name + ".pt"), X, Y, CommittorNet)
+    gen_V_contour(x,y,V,nice_name,mpath(run_name+"_contour_com.png"),a_center=a_center,b_center=b_center, committor_file= mpath(run_name + "_gridnn.npy") if os.path.exists(mpath(run_name + "_gridnn.npy")) else None)
+
+    V_expr_run = SoftMinPotential(kcenters,b_default)
+    compute_committor(
+        V_expr_run,
+        a_center=a_center,
+        b_center=b_center,
+        x_min=float(x[0]),
+        x_max=float(x[-1]),
+        y_min=float(y[0]),
+        y_max=float(y[-1]),
+        mesh_Nx=300,
+        mesh_Ny=300,
+        nx=len(x),
+        ny=len(y),
+        radius=float(cutoff),
+        out_file=mpath(run_name+"_gridfem")
+    ) # generates FEM solution npy file
+    compare_committors(
+        a=np.load(mpath(run_name + "_gridnn.npy")),
+        b=np.load(mpath(run_name + "_gridfem.npy")),
+        X=X,
+        Y=Y,
+        filename=mpath(run_name + "_grid_comparison.pdf"),
+        title_1="A: NN Committor",
+        title_2="B: FEM Committor",
+    )
+    exit()
+
+
+
+
+
+
