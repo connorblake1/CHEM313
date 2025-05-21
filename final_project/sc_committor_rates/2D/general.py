@@ -9,33 +9,7 @@ import json
 import os
 from json import JSONDecodeError
 from sklearn.cluster import DBSCAN
-from global_utils import max_K, cnmsam, dist
-
-RATES_FILE = "rates_db.json"
-
-
-# HYPERPARAMETERS
-
-def append_rate(a_rate, b_rate):
-    # Try to load the existing database; if it doesn't exist or is empty/corrupt, start fresh
-    if os.path.exists(RATES_FILE) and os.path.getsize(RATES_FILE) > 0:
-        try:
-            with open(RATES_FILE, "r") as f:
-                db = json.load(f)
-        except JSONDecodeError:
-            db = {}
-    else:
-        db = {}
-
-    # Append to the list for this run
-    db.setdefault(run_name, []).append((a_rate, b_rate))
-
-    # Write back atomically
-    tmp_file = RATES_FILE + ".tmp"
-    with open(tmp_file, "w") as f:
-        json.dump(db, f, indent=2)
-    os.replace(tmp_file, RATES_FILE)
-
+from global_utils import max_K, cnmsam, dist, append_rate
 
 # For plotting
 matplotlib.rcParams['text.usetex'] = False
@@ -209,7 +183,7 @@ for step in range(n_opt_steps):
         b_rate_mean = torch.mean(b_rate_estimates)
         b_local = float(b_rate_mean.cpu().detach().numpy())
         b_means.append(b_rate_mean.cpu().detach().numpy())
-        append_rate(a_local, b_local)
+        append_rate(run_name=run_name, a_rate=a_local, b_rate=b_local)
     
     # Report to the command line
     print(f"Step {step}: Rate Estimate = {a_rate_mean.item()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}")
@@ -256,8 +230,6 @@ for step in range(n_opt_steps):
         axs['a'].set_xlim(x[0],x[-1])
         axs['a'].set_ylim(y[0],y[-1])
         axs['a'].legend()
-
-        
 
         axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(a_means), c = '#1B346C')
         axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(b_means), c = '#F54B1A')
