@@ -17,7 +17,6 @@ def half_loss(net, data, a_targets, b_targets, i_a, i_b, cmask):
 def half_log_loss(net, data, a_targets, b_targets, a_long_targets, b_long_targets, i_a, i_b, cmask):
     a_predictions = cnmsam(net,data,cmask)[...,i_a]
     b_predictions = cnmsam(net,data,cmask)[...,i_b]
-
     a_indices = torch.where(a_targets != 0)
     b_indices = torch.where(b_targets != 0)
     
@@ -32,3 +31,8 @@ def half_log_loss(net, data, a_targets, b_targets, a_long_targets, b_long_target
 
     return (torch.mean(torch.square(torch.log(a_predictions) - torch.log(a_targets)))) + (torch.mean(torch.square(torch.log(b_predictions) - torch.log(b_targets)))), None #individual_losses
     
+def half_log_loss_multi(net, data, targets, cmask):
+    predictions = cnmsam(net, data, cmask) # [N,K]
+    mask = ((targets != 0) & (targets != 1)).all(dim=1)
+    predictions, targets = predictions[mask], targets[mask]
+    return torch.mean(torch.square(torch.log(predictions) - torch.log(targets)))
