@@ -5,6 +5,33 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size
+import json
+import os
+from json import JSONDecodeError
+
+
+RATES_FILE = "rates_db.json"
+
+
+def append_rate(a_rate, b_rate):
+    # Try to load the existing database; if it doesn't exist or is empty/corrupt, start fresh
+    if os.path.exists(RATES_FILE) and os.path.getsize(RATES_FILE) > 0:
+        try:
+            with open(RATES_FILE, "r") as f:
+                db = json.load(f)
+        except JSONDecodeError:
+            db = {}
+    else:
+        db = {}
+
+    # Append to the list for this run
+    db.setdefault(run_name, []).append((a_rate, b_rate))
+
+    # Write back atomically
+    tmp_file = RATES_FILE + ".tmp"
+    with open(tmp_file, "w") as f:
+        json.dump(db, f, indent=2)
+    os.replace(tmp_file, RATES_FILE)
 
 
 # For plotting
@@ -45,7 +72,7 @@ print("Initial representation of the committor has been trained!")
 
 # Run the optimization
 n_trials = 1
-n_opt_steps = 3000
+n_opt_steps = 700
 optimizer = torch.optim.Adam(net.parameters(), lr = 1e-2)
 xs = init_data.to(device)
 us = torch.linspace(0, 1, n_windows).to(device)
@@ -167,10 +194,12 @@ for trial in range(1): # Can run multiple trials, if you'd like
             b_rate_estimates = 1/torch.mean(b_escape_times)*torch.mean(1 - torch.sigmoid(net(b_exit_tensor)))
 
             a_rate_mean = torch.mean(a_rate_estimates)
+            a_local = float(a_rate_mean.cpu().detach().numpy())
             a_means.append(a_rate_mean.cpu().detach().numpy())
             b_rate_mean = torch.mean(b_rate_estimates)
+            b_local = float(b_rate_mean.cpu().detach().numpy())
             b_means.append(b_rate_mean.cpu().detach().numpy())
-
+            append_rate(a_local, b_local)
         
         # Report to the command line
         print(f"Step {step}: Rate Estimate = {a_rate_mean.item()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}")
@@ -197,11 +226,12 @@ for trial in range(1): # Can run multiple trials, if you'd like
             plt.tight_layout()
             fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
             fig.set_size_inches(15.2, 4.8)
-            axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(-5, 0, 15), cmap = 'mycmap')
+            axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(-5, 10, 15), cmap = 'mycmap',zorder=0)
+            
             fig.colorbar(axs['a'].contour(X, Y, torch.sigmoid(net(grid_input)).cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap ="spring"), ax = axs['a'], ticks = np.linspace(0, 1, 11))
             axs['a'].scatter(torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
-            axs['a'].scatter(torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'blue', alpha = 1)
-            axs['a'].scatter(torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'green', alpha = 1)
+            # axs['a'].scatter(torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'blue', alpha = 1)
+            # axs['a'].scatter(torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'green', alpha = 1)
             axs['a'].add_patch(plt.Circle(a_center, cutoff, linewidth = 2, color = 'red', fill = True))
             axs['a'].add_patch(plt.Circle(b_center, cutoff, linewidth = 2, color = 'green', fill = True))
             # axs['a'].text(a_center[0]-.04,a_center[1]-.04, "A", weight = 'bold', size = 15, color = 'white')
@@ -212,7 +242,7 @@ for trial in range(1): # Can run multiple trials, if you'd like
             axs['a'].set_ylabel(r"y", size = 16)
 
             #axs['a'].contour(X, Y, V_surface.cpu().detach().numpy(), levels = np.linspace(0., 0, 1), cmap = 'mycmap5')
-            axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(0, 1e20, 2), cmap = 'mycmap6', zorder = 100)
+            # axs['a'].contourf(X,Y, V_surface.cpu().detach().numpy(), levels = np.linspace(0, 1e20, 2), cmap = 'mycmap6', zorder = 100)
             axs['a'].set_xlim(x[0],x[-1])
             axs['a'].set_ylim(y[0],y[-1])
             axs['a'].legend()

@@ -121,29 +121,32 @@ device = torch.device('cpu')
 key = "linear"
 key_param = 5
 run_name = "wells_" + key
-if key == "linear":
-    run_name = run_name + "_" + str(key_param)
+run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 4
+b_i = 1
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
 dim = 2
 
-def make_V_from_centers(centers, a=9.2, b=0.4, c_soft=0.1, c_hard=5.0, margin=3.5):
-    def V(x):
-        # x: shape (N, 2)
+def make_V_from_centers(centers, a=9.2, b=0.2, c_soft=0.1, c_hard=5.0, margin=3.5):
+    # def V(x): # gaussian, too much leakage
+    #     # x: shape (N, 2)
+    #     diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
+    #     sq_dist = torch.sum(diff**2, dim=-1)            # (N, M)
+    #     wells = torch.exp(-sq_dist / (2 * b**2))        # (N, M)
+    #     V_wells = -a * wells.sum(dim=1)                 # (N,)
+
+    #     r2 = torch.sum(x**2, dim=1)                     # (N,)
+    #     outermost_r2 = torch.max(torch.sum(centers**2, dim=1))  # scalar
+    #     soft_mask = (r2 <= outermost_r2 + margin).float()
+    #     hard_mask = 1.0 - soft_mask
+    #     V_confine = c_soft * r2 * soft_mask + c_hard * r2 * hard_mask
+
+    #     return V_wells + V_confine + 2*c_hard*x[:,1]**2                     # (N,)
+    def V(x, b=-20.):
         diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
         sq_dist = torch.sum(diff**2, dim=-1)            # (N, M)
-        wells = torch.exp(-sq_dist / (2 * b**2))        # (N, M)
-        V_wells = -a * wells.sum(dim=1)                 # (N,)
-
-        r2 = torch.sum(x**2, dim=1)                     # (N,)
-        outermost_r2 = torch.max(torch.sum(centers**2, dim=1))  # scalar
-        soft_mask = (r2 <= outermost_r2 + margin).float()
-        hard_mask = 1.0 - soft_mask
-        V_confine = c_soft * r2 * soft_mask + c_hard * r2 * hard_mask
-
-        return V_wells + V_confine + c_hard*x[:,1]**2                     # (N,)
+        return -torch.logsumexp(b*sq_dist,dim=1)
     return V
 
 def line_centers(K, spacing=1.5):
@@ -151,16 +154,17 @@ def line_centers(K, spacing=1.5):
     x = torch.linspace(-(K-1)/2, (K-1)/2, K) * spacing
     return torch.stack([x, torch.zeros_like(x)], dim=1)  # shape (K,2)
 
-def triangle_centers(radius=1.5):
+def triangle_centers(K,radius=1):
     # 3 wells at 120° intervals in 2D
     angles = torch.tensor([0, 2*np.pi/3, 4*np.pi/3])
+    angles = angles[:K]
     x = radius * torch.cos(angles)
     y = radius * torch.sin(angles)
     return torch.stack([x, y], dim=1)  # shape (3,2)
 
 center_dict = {
     "linear": line_centers(K=key_param, spacing = 1.5),
-    "triangle": triangle_centers(radius=2.0)
+    "triangle": triangle_centers(K=key_param, radius=1.0)
 }
 kcenters = center_dict[key]
 

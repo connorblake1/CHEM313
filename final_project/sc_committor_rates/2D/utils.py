@@ -11,7 +11,7 @@ def gen_V_contour(x, y, V_func, filename, a_center, b_center, **kwargs):
 
     plt.figure(figsize=(6,5))
     cs = plt.contourf(X.numpy(), Y.numpy(), Z.numpy(), cmap='PiYG',
-                      levels=np.linspace(Z.min(), -Z.min(), 35))
+                      levels=np.linspace(Z.min(),15, 35))
     plt.colorbar(cs)
     
     # Plot red and green markers
