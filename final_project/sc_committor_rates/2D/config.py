@@ -1,6 +1,8 @@
 import torch
 import numpy as np
+import os
 from utils import *
+from global_utils import max_K
 
 class CommittorNet(torch.nn.Module):
     def __init__(self, dim):
@@ -8,15 +10,18 @@ class CommittorNet(torch.nn.Module):
         self.dim = dim
         block = [torch.nn.Linear(dim, 50),
                       torch.nn.Tanh(),
-                      torch.nn.Linear(50, 1),]
+                      torch.nn.Linear(50, max_K),]
         self.Block = torch.nn.Sequential(*block)
     
     def forward(self, x):
         prediction = self.Block(x)
-        return prediction.squeeze()
+        return prediction
+        # return prediction.squeeze()
 device = torch.device('cpu')
 
-mpath = lambda name: os.path.join("run_data",name)
+def mpath(name):
+    return os.path.join("run_data",name)
+
 validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
 if validation_mode:
     from fem_utils import *
@@ -125,12 +130,12 @@ if validation_mode:
 
 ## Improved General Transition Well
 key = "linear"
-key_param = 5
+key_param = 3
 run_name = "wells_" + key
 
 run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 3
+b_i = 1
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
 nice_name = ""
