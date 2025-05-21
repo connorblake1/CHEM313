@@ -67,7 +67,7 @@ def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_traject
     final_b_var = torch.sum(torch.var(xs_for_var, axis = 1))
     return final_a_estimates, final_b_estimates, final_a_var.detach(), final_a_means.detach()
 
-def flux_sample(V, beta, gamma, step_size, a_center, b_center, basin_cutoff, n_crossings, stride = 1):
+def flux_sample(V, beta, gamma, step_size, a_center, basin_cutoff, n_crossings, stride = 1):
     # always going from A->B
     x = a_center.unsqueeze(0)
     n_steps = 0
@@ -94,10 +94,10 @@ def flux_sample(V, beta, gamma, step_size, a_center, b_center, basin_cutoff, n_c
             escape_times.append(n_steps)
             n_steps = 0
             from_A = False
-        if torch.sqrt(torch.sum(torch.square(x - b_center))) < basin_cutoff:
-           print("Actual Transition")
-           x = a_center.unsqueeze(0)
-           n_steps = 0
+        # if torch.sqrt(torch.sum(torch.square(x - b_center))) < basin_cutoff:
+        #    print("Actual Transition")
+        #    x = a_center.unsqueeze(0)
+        #    n_steps = 0
         if torch.sqrt(torch.sum(torch.square(x - a_center))) < basin_cutoff and from_A == False:
             #print("Re-entering Basin")
             from_A = True

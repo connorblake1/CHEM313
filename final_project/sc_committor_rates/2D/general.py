@@ -16,13 +16,11 @@ matplotlib.rcParams['text.usetex'] = False
 from matplotlib.colors import LinearSegmentedColormap
 cmap = LinearSegmentedColormap.from_list("mycmap", ['#1B346C','#01ABE9','#F1F8F1','#F54B1A'])
 cmap2 = LinearSegmentedColormap.from_list("mycmap2", ['#ffffff','#000000','#ffffff'])
-cmap3 = LinearSegmentedColormap.from_list("mycmap3", ['#1B346C','#ffffff','#F54B1A'])
 cmap4 = LinearSegmentedColormap.from_list("mycmap4", ['#ffffff','#F54B1A'])
 cmap5 = LinearSegmentedColormap.from_list("mycmap5", ['#000000','#000000'])
 cmap6 = LinearSegmentedColormap.from_list("mycmap5", ['#ffffff','#ffffff'])
 matplotlib.colormaps.register(name="mycmap",cmap=cmap)
 matplotlib.colormaps.register(name="mycmap2",cmap=cmap2)
-matplotlib.colormaps.register(name="mycmap3",cmap=cmap3)
 matplotlib.colormaps.register(name="mycmap4",cmap=cmap4)
 matplotlib.colormaps.register(name="mycmap5",cmap=cmap5)
 matplotlib.colormaps.register(name="mycmap6",cmap=cmap6)
@@ -65,8 +63,8 @@ V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
 print("Calculating Flux...")
-a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, b_center, cutoff, 1000, stride = 1)
-b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, a_center, cutoff, 1000, stride = 1)
+a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, cutoff, 1000, stride = 1)
+b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, cutoff, 1000, stride = 1)
 
 a_escape_confs_list = a_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
 b_escape_confs_list = b_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
@@ -77,7 +75,6 @@ escape_confs = torch.cat([a_escape_confs, b_escape_confs], axis = 0).reshape(-1,
 
 i_a = 0
 i_b = 1
-
 
 running_a_exit_confs = []
 running_b_exit_confs = []
@@ -256,6 +253,14 @@ for step in range(n_opt_steps):
 #         continue
 #     class_member_mask = (labels == k)
 #     q_k = q_xs[class_member_mask]
+"""
+executor structure:
+
+
+
+
+
+"""
 
 
 
