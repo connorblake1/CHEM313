@@ -3,6 +3,23 @@ import os
 import json
 from json import JSONDecodeError
 
+class CommittorNet(torch.nn.Module):
+    def __init__(self, dim):
+        super(CommittorNet, self).__init__()
+        self.dim = dim
+        block = [torch.nn.Linear(dim, 50),
+                      torch.nn.Tanh(),
+                      torch.nn.Linear(50, max_K),]
+        self.Block = torch.nn.Sequential(*block)
+    
+    def forward(self, x):
+        prediction = self.Block(x)
+        return prediction
+
+def mpath(name):
+    return os.path.join("run_data",name)
+
+
 max_K = 4
 
 def masked_softargmax(x,mask):

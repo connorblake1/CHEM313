@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import numpy as np
-from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size, nice_name, mpath, kcenters
+from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, run_name, x, y, beta, gamma, step_size, nice_name, kcenters
 import json
 import os
 from json import JSONDecodeError
 from sklearn.cluster import DBSCAN
-from global_utils import max_K, cnmsam, dist, append_rate
+from global_utils import max_K, cnmsam, dist, append_rate, CommittorNet, mpath
 
 # For plotting
 matplotlib.rcParams['text.usetex'] = False

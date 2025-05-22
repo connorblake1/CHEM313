@@ -2,29 +2,9 @@ import torch
 import numpy as np
 import os
 from utils import *
-from global_utils import max_K
+from global_utils import max_K, CommittorNet, mpath
 
-class CommittorNet(torch.nn.Module):
-    def __init__(self, dim):
-        super(CommittorNet, self).__init__()
-        self.dim = dim
-        block = [torch.nn.Linear(dim, 50),
-                      torch.nn.Tanh(),
-                      torch.nn.Linear(50, max_K),]
-        self.Block = torch.nn.Sequential(*block)
-    
-    def forward(self, x):
-        prediction = self.Block(x)
-        return prediction
-        # return prediction.squeeze()
 device = torch.device('cpu')
-
-def mpath(name):
-    return os.path.join("run_data",name)
-
-
-
-
 
 ## TC
 # run_name = "TC_mod"
@@ -128,7 +108,7 @@ def mpath(name):
 
 ## Improved General Transition Well
 ##<CHANGE THESE PARAMETERS>
-key = "square"
+key = "dist_square"
 key_param = 0
 run_name = "wells_" + key
 
