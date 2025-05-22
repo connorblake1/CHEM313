@@ -96,32 +96,30 @@ index_counters_k  = torch.zeros(K, dtype=torch.long)
 k_running_short_reporters = torch.zeros([K,n_reporter_steps,dim])
 
 # <split>
-a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, cutoff, 100, stride = 1) 
-b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, cutoff, 100, stride = 1)
-a_escape_confs_list = a_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
-b_escape_confs_list = b_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
-running_a_exit_confs = []
-running_b_exit_confs = []
-a_exit_indices = torch.randperm(len(a_escape_confs_list))
-b_exit_indices = torch.randperm(len(b_escape_confs_list))
-i_a = 0
-i_b = 1
-
-#c
-a_transit_history = [0]
-b_transit_history = [0]
-a_transit = False
-last_a_transit = 0
-b_transit = False
-last_b_transit = 0
-a_means = []
-a_times = []
-b_means = []
-b_times = []
-losses = []
-log_losses = []
-a_index_counter = 0
-b_index_counter = 0
+# a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, cutoff, 100, stride = 1) 
+# b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, cutoff, 100, stride = 1)
+# a_escape_confs_list = a_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
+# b_escape_confs_list = b_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
+# running_a_exit_confs = []
+# running_b_exit_confs = []
+# a_exit_indices = torch.randperm(len(a_escape_confs_list))
+# b_exit_indices = torch.randperm(len(b_escape_confs_list))
+# i_a = 0
+# i_b = 1
+# a_transit_history = [0]
+# b_transit_history = [0]
+# a_transit = False
+# last_a_transit = 0
+# b_transit = False
+# last_b_transit = 0
+# a_means = []
+# a_times = []
+# b_means = []
+# b_times = []
+# losses = []
+# log_losses = []
+# a_index_counter = 0
+# b_index_counter = 0
 #<\block Z>
 
 
@@ -155,30 +153,30 @@ for step in range(n_opt_steps):
     xs_k = torch.stack(xs_list, dim=0)
     # print("A: xs_k",xs_k.shape)
     # <split>
-    if step == 0 or a_transit == True:
-        a_xs = a_escape_confs_list[a_exit_indices[a_index_counter]]
-        a_xs = a_xs.unsqueeze(0)
-        a_transit = False
-        running_a_exit_confs.append(a_xs.cpu().numpy())
-    else:
-        # a_reporter_energies = V(a_running_short_reporters.reshape([-1,dim])[last_a_transit:])  # noqa: F821
-        a_weights = cnmsam(net,a_running_short_reporters.squeeze().reshape([-1, dim]),cmask)[...,i_a][last_a_transit:].detach() # noqa: F821
-        a_weights = torch.where(dist(a_running_short_reporters.squeeze().reshape([-1, dim])[last_a_transit:], a_center) < cutoff, 0., a_weights) # noqa: F821
-        _, a_indices = torch.sort(a_weights, descending = True)
-        a_indices = a_indices[:1]
-        a_xs = a_running_short_reporters.squeeze().reshape([-1, dim])[last_a_transit:][a_indices]# noqa: F821
-    if step == 0 or b_transit == True:
-        b_xs = b_escape_confs_list[b_exit_indices[b_index_counter]]
-        b_xs = b_xs.unsqueeze(0)
-        b_transit = False
-        running_b_exit_confs.append(b_xs.cpu().numpy())
-    else:
-        # b_reporter_energies = V(b_running_short_reporters.reshape([-1,dim])[last_b_transit:])# noqa: F821
-        b_weights = cnmsam(net,b_running_short_reporters.squeeze().reshape([-1, dim]),cmask)[...,i_b][ last_b_transit:].detach()# noqa: F821
-        b_weights = torch.where(dist(b_running_short_reporters.squeeze().reshape([-1, dim])[ last_b_transit:], b_center) < cutoff, 0., b_weights)# noqa: F821
-        _, b_indices = torch.sort(b_weights, descending = True)
-        b_indices = b_indices[:1]
-        b_xs = b_running_short_reporters.squeeze().reshape([-1, dim])[last_b_transit:][b_indices]# noqa: F821
+    # if step == 0 or a_transit == True:
+    #     a_xs = a_escape_confs_list[a_exit_indices[a_index_counter]]
+    #     a_xs = a_xs.unsqueeze(0)
+    #     a_transit = False
+    #     running_a_exit_confs.append(a_xs.cpu().numpy())
+    # else:
+    #     # a_reporter_energies = V(a_running_short_reporters.reshape([-1,dim])[last_a_transit:])  # noqa: F821
+    #     a_weights = cnmsam(net,a_running_short_reporters.squeeze().reshape([-1, dim]),cmask)[...,i_a][last_a_transit:].detach() # noqa: F821
+    #     a_weights = torch.where(dist(a_running_short_reporters.squeeze().reshape([-1, dim])[last_a_transit:], a_center) < cutoff, 0., a_weights) # noqa: F821
+    #     _, a_indices = torch.sort(a_weights, descending = True)
+    #     a_indices = a_indices[:1]
+    #     a_xs = a_running_short_reporters.squeeze().reshape([-1, dim])[last_a_transit:][a_indices]# noqa: F821
+    # if step == 0 or b_transit == True:
+    #     b_xs = b_escape_confs_list[b_exit_indices[b_index_counter]]
+    #     b_xs = b_xs.unsqueeze(0)
+    #     b_transit = False
+    #     running_b_exit_confs.append(b_xs.cpu().numpy())
+    # else:
+    #     # b_reporter_energies = V(b_running_short_reporters.reshape([-1,dim])[last_b_transit:])# noqa: F821
+    #     b_weights = cnmsam(net,b_running_short_reporters.squeeze().reshape([-1, dim]),cmask)[...,i_b][ last_b_transit:].detach()# noqa: F821
+    #     b_weights = torch.where(dist(b_running_short_reporters.squeeze().reshape([-1, dim])[ last_b_transit:], b_center) < cutoff, 0., b_weights)# noqa: F821
+    #     _, b_indices = torch.sort(b_weights, descending = True)
+    #     b_indices = b_indices[:1]
+    #     b_xs = b_running_short_reporters.squeeze().reshape([-1, dim])[last_b_transit:][b_indices]# noqa: F821
     # print("A: a_xs",a_xs.shape)
     #<\block A>
 
@@ -194,14 +192,14 @@ for step in range(n_opt_steps):
     # print()
     # print(k_short_reporters)
     # <split>
-    a_short_reporters, a_short_times = sampling.take_reporter_steps(a_xs, V, beta, gamma, step_size, n_reporter_trajectories, n_reporter_steps, a_center, b_center, cutoff, adaptive = True)
-    b_short_reporters, b_short_times = sampling.take_reporter_steps(b_xs, V, beta, gamma, step_size, n_reporter_trajectories, n_reporter_steps, a_center,  b_center, cutoff, adaptive = True) # CB: why are A and B not swapped? Ohh it's because the committor is not swap invariant
-    a_times.append(np.mean(a_short_times))
-    b_times.append(np.mean(b_short_times))
-    # print("B: a_short_reporters",a_short_reporters.shape) #st
-    # print("B: a_times",len(a_times)) #st
-    # print()
-    # print(a_short_reporters,b_short_reporters)
+    # a_short_reporters, a_short_times = sampling.take_reporter_steps(a_xs, V, beta, gamma, step_size, n_reporter_trajectories, n_reporter_steps, a_center, b_center, cutoff, adaptive = True)
+    # b_short_reporters, b_short_times = sampling.take_reporter_steps(b_xs, V, beta, gamma, step_size, n_reporter_trajectories, n_reporter_steps, a_center,  b_center, cutoff, adaptive = True) # CB: why are A and B not swapped? Ohh it's because the committor is not swap invariant
+    # a_times.append(np.mean(a_short_times))
+    # b_times.append(np.mean(b_short_times))
+    # # print("B: a_short_reporters",a_short_reporters.shape) #st
+    # # print("B: a_times",len(a_times)) #st
+    # # print()
+    # # print(a_short_reporters,b_short_reporters)
     #<\block B>
 
     # Keep a memory of sampled configurations
@@ -224,21 +222,21 @@ for step in range(n_opt_steps):
     # print("C: running_xs_all",running_xs_all.shape)
     # print()
     # <split>
-    if step == 0:
-        a_running_xs = a_xs.detach()
-        b_running_xs = b_xs.detach()
-        running_xs = torch.cat((a_running_xs, b_running_xs), axis = 0)
-        a_running_short_reporters = a_short_reporters
-        b_running_short_reporters = b_short_reporters
-        running_short_reporters = torch.cat((a_running_short_reporters, b_running_short_reporters), axis = 0)
+    # if step == 0:
+    #     a_running_xs = a_xs.detach()
+    #     b_running_xs = b_xs.detach()
+    #     running_xs = torch.cat((a_running_xs, b_running_xs), axis = 0)
+    #     a_running_short_reporters = a_short_reporters
+    #     b_running_short_reporters = b_short_reporters
+    #     running_short_reporters = torch.cat((a_running_short_reporters, b_running_short_reporters), axis = 0)
         
-    else:
-        a_running_xs = torch.cat((a_running_xs.detach(), a_xs.detach()))
-        b_running_xs = torch.cat((b_running_xs.detach(), b_xs.detach()))
-        a_running_short_reporters = torch.cat((a_running_short_reporters.detach(), a_short_reporters), axis = 0)
-        b_running_short_reporters = torch.cat((b_running_short_reporters.detach(), b_short_reporters), axis = 0)
-        running_short_reporters = torch.cat((a_running_short_reporters, b_running_short_reporters), axis = 0)
-        running_xs = torch.cat((a_running_xs, b_running_xs), axis = 0)
+    # else:
+    #     a_running_xs = torch.cat((a_running_xs.detach(), a_xs.detach()))
+    #     b_running_xs = torch.cat((b_running_xs.detach(), b_xs.detach()))
+    #     a_running_short_reporters = torch.cat((a_running_short_reporters.detach(), a_short_reporters), axis = 0)
+    #     b_running_short_reporters = torch.cat((b_running_short_reporters.detach(), b_short_reporters), axis = 0)
+    #     running_short_reporters = torch.cat((a_running_short_reporters, b_running_short_reporters), axis = 0)
+    #     running_xs = torch.cat((a_running_xs, b_running_xs), axis = 0)
     # print("C: a_xs",a_xs.shape)
     # print("C: a_short_reporters",a_short_reporters.shape)
     # print("C: a_running_short_reporters",a_running_short_reporters.shape)
@@ -270,39 +268,39 @@ for step in range(n_opt_steps):
             total_loss.backward()
             optimizer2.step() 
     # <split>
-    for j in range(1): # Can go through multiple optimization steps per data collection step, if needed
-        with torch.no_grad():
-            a_short_targets, b_short_targets, a_short_var, a_short_means = sampling.calculate_committor_estimates(running_short_reporters.reshape([-1, dim]), net, a_center, b_center, cutoff, n_reporter_trajectories, i_a, i_b, cmask)
+    # for j in range(1): # Can go through multiple optimization steps per data collection step, if needed
+    #     with torch.no_grad():
+    #         a_short_targets, b_short_targets, a_short_var, a_short_means = sampling.calculate_committor_estimates(running_short_reporters.reshape([-1, dim]), net, a_center, b_center, cutoff, n_reporter_trajectories, i_a, i_b, cmask)
         
-            o_short_targets, o_short_means = sampling.calculate_committor_estimates_multi(running_short_reporters.reshape([-1,dim]), net, centers_k, cutoff, n_reporter_trajectories, cmask)
+    #         o_short_targets, o_short_means = sampling.calculate_committor_estimates_multi(running_short_reporters.reshape([-1,dim]), net, centers_k, cutoff, n_reporter_trajectories, cmask)
             
-            # print(a_short_targets, b_short_targets)
-            # print(o_short_targets)
+    #         # print(a_short_targets, b_short_targets)
+    #         # print(o_short_targets)
 
-        batch_size = running_xs.size()[0]
+    #     batch_size = running_xs.size()[0]
 
-        # print("D: a_short_targets", a_short_targets.shape)
-        # print("D: a_short_means", a_short_means.shape)
-        for m in range(100):
-            permutation = torch.randperm(running_xs.size()[0])
-            for i in range(0, len(running_xs), batch_size):
-                # print(m)
-                optimizer.zero_grad()
-                net.zero_grad()
-                indices = permutation[i:i+batch_size]
-                log_loss,_ = training.half_log_loss(
-                    net,
-                    running_xs.to(device)[indices],
-                    a_short_targets.to(device)[indices],
-                    b_short_targets.to(device)[indices],
-                    None,
-                    None,
-                    i_a,
-                    i_b,
-                    cmask
-                )
-                total_loss = log_loss
-
+    #     # print("D: a_short_targets", a_short_targets.shape)
+    #     # print("D: a_short_means", a_short_means.shape)
+    #     for m in range(100):
+    #         permutation = torch.randperm(running_xs.size()[0])
+    #         for i in range(0, len(running_xs), batch_size):
+    #             # print(m)
+    #             optimizer.zero_grad()
+    #             net.zero_grad()
+    #             indices = permutation[i:i+batch_size]
+    #             log_loss,_ = training.half_log_loss(
+    #                 net,
+    #                 running_xs.to(device)[indices],
+    #                 a_short_targets.to(device)[indices],
+    #                 b_short_targets.to(device)[indices],
+    #                 None,
+    #                 None,
+    #                 i_a,
+    #                 i_b,
+    #                 cmask
+    #             )
+    #             total_loss = log_loss
+# 
                 # shuffled = running_xs.to(device)[indices]
                 # stacked = torch.stack((a_short_targets[indices],b_short_targets[indices]),dim=1).to(device)
                 # log_loss = training.half_log_loss_multi(
@@ -313,8 +311,8 @@ for step in range(n_opt_steps):
                 # )
                 # total_loss = 2*log_loss
 
-                total_loss.backward()
-                optimizer.step()
+                # total_loss.backward()
+                # optimizer.step()
     # print()
     # print()
     # #<\block D>\
@@ -337,24 +335,24 @@ for step in range(n_opt_steps):
     print(f"<<<>>>> Step {step}: Rate Estimate = {rate_estimates.detach().cpu().numpy()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}") # TODO
 
     # <split>
-    with torch.no_grad():
-        a_exit_tensor = torch.tensor(np.array(a_escape_confs)).squeeze()
-        b_exit_tensor = torch.tensor(np.array(b_escape_confs)).squeeze()
-        a_rate_estimates = 1/torch.mean(a_escape_times)*torch.mean(cnmsam(net,a_exit_tensor,cmask)[...,i_a])
-        b_rate_estimates = 1/torch.mean(b_escape_times)*torch.mean(cnmsam(net,b_exit_tensor,cmask)[...,i_b])
+    # with torch.no_grad():
+    #     a_exit_tensor = torch.tensor(np.array(a_escape_confs)).squeeze()
+    #     b_exit_tensor = torch.tensor(np.array(b_escape_confs)).squeeze()
+    #     a_rate_estimates = 1/torch.mean(a_escape_times)*torch.mean(cnmsam(net,a_exit_tensor,cmask)[...,i_a])
+    #     b_rate_estimates = 1/torch.mean(b_escape_times)*torch.mean(cnmsam(net,b_exit_tensor,cmask)[...,i_b])
 
-        a_rate_mean = torch.mean(a_rate_estimates)
-        a_local = float(a_rate_mean.cpu().detach().numpy())
-        a_means.append(a_rate_mean.cpu().detach().numpy())
-        b_rate_mean = torch.mean(b_rate_estimates)
-        b_local = float(b_rate_mean.cpu().detach().numpy())
-        b_means.append(b_rate_mean.cpu().detach().numpy())
-        append_rate(run_name=run_name, a_rate=a_local, b_rate=b_local)
+    #     a_rate_mean = torch.mean(a_rate_estimates)
+    #     a_local = float(a_rate_mean.cpu().detach().numpy())
+    #     a_means.append(a_rate_mean.cpu().detach().numpy())
+    #     b_rate_mean = torch.mean(b_rate_estimates)
+    #     b_local = float(b_rate_mean.cpu().detach().numpy())
+    #     b_means.append(b_rate_mean.cpu().detach().numpy())
+    #     append_rate(run_name=run_name, a_rate=a_local, b_rate=b_local)
 
 
-    # Report to the command line
-    print(f"Step {step}: Rate Estimate = {a_rate_mean.item()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}")
-    print(a_index_counter, b_index_counter)
+    # # Report to the command line
+    # print(f"Step {step}: Rate Estimate = {a_rate_mean.item()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}")
+    # print(a_index_counter, b_index_counter)
 
     # print("E: a_exit_tensor", a_exit_tensor.shape)
     # print("E: a_escape_times", a_escape_times.shape)
@@ -375,19 +373,19 @@ for step in range(n_opt_steps):
                 index_counters_k[k] += 1
                 # transit_history_k[k].append() TODO
     # <split>
-    if torch.min(torch.sqrt(torch.sum(torch.square(a_running_short_reporters.reshape([-1, dim])[last_a_transit:] - b_center), axis = -1))) < cutoff:
-        print("A Transit!")
-        a_transit = True
-        last_a_transit = len(a_running_short_reporters.reshape([-1, dim]))
-        a_index_counter += 1
-        a_transit_history.append(int(len(running_xs.reshape([-1, dim]))/2))
+    # if torch.min(torch.sqrt(torch.sum(torch.square(a_running_short_reporters.reshape([-1, dim])[last_a_transit:] - b_center), axis = -1))) < cutoff:
+    #     print("A Transit!")
+    #     a_transit = True
+    #     last_a_transit = len(a_running_short_reporters.reshape([-1, dim]))
+    #     a_index_counter += 1
+    #     a_transit_history.append(int(len(running_xs.reshape([-1, dim]))/2))
         
-    if torch.min(torch.sqrt(torch.sum(torch.square(b_running_short_reporters.reshape([-1, dim])[last_b_transit:] - a_center), axis = -1))) < cutoff:
-        print("B Transit!")
-        b_transit = True
-        last_b_transit = len(b_running_short_reporters.reshape([-1, dim]))
-        b_index_counter += 1
-        b_transit_history.append(int(len(running_xs.reshape([-1, dim]))/2))
+    # if torch.min(torch.sqrt(torch.sum(torch.square(b_running_short_reporters.reshape([-1, dim])[last_b_transit:] - a_center), axis = -1))) < cutoff:
+    #     print("B Transit!")
+    #     b_transit = True
+    #     last_b_transit = len(b_running_short_reporters.reshape([-1, dim]))
+    #     b_index_counter += 1
+    #     b_transit_history.append(int(len(running_xs.reshape([-1, dim]))/2))
     #<\block F>
     # plotting
     if step % 10 == 9:
@@ -427,7 +425,6 @@ for step in range(n_opt_steps):
         axs['a'].set_xlim(x[0],x[-1])
         axs['a'].set_ylim(y[0],y[-1])
         axs['a'].legend()
-        axs['a'].scatter(torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
                 
         dt = 2 * (n_reporter_trajectories * n_reporter_steps).cpu().detach().numpy()*step_size.cpu().detach().numpy()
         out_means_k = torch.stack((means_k),dim=0)
@@ -452,35 +449,35 @@ for step in range(n_opt_steps):
         plt.close()
     
         # <split>
-        plt.tight_layout()
-        fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
-        fig.set_size_inches(15.2, 4.8)
-        axs['a'].contourf(X,Y, V_surface_numpy, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap',zorder=0)
+        # plt.tight_layout()
+        # fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
+        # fig.set_size_inches(15.2, 4.8)
+        # axs['a'].contourf(X,Y, V_surface_numpy, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap',zorder=0)
         
-        fig.colorbar(axs['a'].contour(X, Y, cnmsam(net,grid_input,cmask)[...,i_a].cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap ="spring"), ax = axs['a'], ticks = np.linspace(0, 1, 11))
-        axs['a'].scatter(torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
-        # axs['a'].scatter(torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'blue', alpha = 1)
-        # axs['a'].scatter(torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'green', alpha = 1)
-        axs['a'].add_patch(plt.Circle(a_center, cutoff, linewidth = 2, color = 'red', fill = True))
-        axs['a'].add_patch(plt.Circle(b_center, cutoff, linewidth = 2, color = 'green', fill = True))
-        axs['a'].plot([], [], color='red', label='A')
-        axs['a'].plot([], [], color='green', label='B')
-        axs['a'].set_xlabel(r"x", size = 16)
-        axs['a'].set_ylabel(r"y", size = 16)
-        axs['a'].set_xlim(x[0],x[-1])
-        axs['a'].set_ylim(y[0],y[-1])
-        axs['a'].legend()
+        # fig.colorbar(axs['a'].contour(X, Y, cnmsam(net,grid_input,cmask)[...,i_a].cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap ="spring"), ax = axs['a'], ticks = np.linspace(0, 1, 11))
+        # axs['a'].scatter(torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
+        # # axs['a'].scatter(torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(a_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'blue', alpha = 1)
+        # # axs['a'].scatter(torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,0], torch.reshape(b_running_xs, [-1, 2]).detach().numpy()[-1,1], color = 'green', alpha = 1)
+        # axs['a'].add_patch(plt.Circle(a_center, cutoff, linewidth = 2, color = 'red', fill = True))
+        # axs['a'].add_patch(plt.Circle(b_center, cutoff, linewidth = 2, color = 'green', fill = True))
+        # axs['a'].plot([], [], color='red', label='A')
+        # axs['a'].plot([], [], color='green', label='B')
+        # axs['a'].set_xlabel(r"x", size = 16)
+        # axs['a'].set_ylabel(r"y", size = 16)
+        # axs['a'].set_xlim(x[0],x[-1])
+        # axs['a'].set_ylim(y[0],y[-1])
+        # axs['a'].legend()
 
-        axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(a_means), c = '#1B346C')
-        axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(b_means), c = '#F54B1A')
-        axs['b'].set_yscale('log')
-        axs['b'].set_xlabel(r"Sampling Time ($\tau$)", size = 12)
-        axs['b'].set_ylabel(r"Rate ($\tau^{-1}$)", size = 12)
-        axs['b'].legend([r'Rate Estimate A to B', r'Rate Estimate B to A', r'Analytical Rate'], prop={'size': 12})
-        axs['b'].set_ylim(1e-8, 1e1)
-        plt.tight_layout()
-        fig.savefig(mpath(run_name + ".pdf"))
-        plt.close()
+        # axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(a_means), c = '#1B346C')
+        # axs['b'].plot(np.arange(step+1)*2*((n_reporter_trajectories*n_reporter_steps).cpu().detach().numpy() + 1)*step_size.cpu().detach().numpy(), np.array(b_means), c = '#F54B1A')
+        # axs['b'].set_yscale('log')
+        # axs['b'].set_xlabel(r"Sampling Time ($\tau$)", size = 12)
+        # axs['b'].set_ylabel(r"Rate ($\tau^{-1}$)", size = 12)
+        # axs['b'].legend([r'Rate Estimate A to B', r'Rate Estimate B to A', r'Analytical Rate'], prop={'size': 12})
+        # axs['b'].set_ylim(1e-8, 1e1)
+        # plt.tight_layout()
+        # fig.savefig(mpath(run_name + ".pdf"))
+        # plt.close()
         #<\block G>
         
 # COMPUTE DBSCANS ETC
@@ -509,13 +506,13 @@ print("SAVING")
 torch.save(net2.state_dict(), mpath(run_name+ ".pt"))
 torch.save(running_xs_all, mpath(run_name+"_rxs.pt"))
 # <split>
-plt.contourf(X,Y, V_surface, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap')
-plt.contour(X, Y, net(grid_input).detach()[:,:,0].numpy(), levels = np.linspace(0.1, 0.9, n_windows), cmap = 'mycmap2')
-plt.savefig(mpath(run_name+"_committor.pdf"))
-#plt.close()
-print("SAVING")
-torch.save(net.state_dict(), mpath(run_name+ ".pt"))
-torch.save(running_xs, mpath(run_name+"_rxs.pt"))
+# plt.contourf(X,Y, V_surface, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap')
+# plt.contour(X, Y, net(grid_input).detach()[:,:,0].numpy(), levels = np.linspace(0.1, 0.9, n_windows), cmap = 'mycmap2')
+# plt.savefig(mpath(run_name+"_committor.pdf"))
+# #plt.close()
+# print("SAVING")
+# torch.save(net.state_dict(), mpath(run_name+ ".pt"))
+# torch.save(running_xs, mpath(run_name+"_rxs.pt"))
 # <\block H>
 
 
