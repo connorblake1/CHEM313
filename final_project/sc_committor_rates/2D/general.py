@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import numpy as np
-from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size, nice_name, mpath
+from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size, nice_name, mpath, kcenters
 import json
 import os
 from json import JSONDecodeError
@@ -43,7 +43,7 @@ net2 = CommittorNet(dim=dim).to(device).double()
 
 
 cmask = torch.arange(max_K) < 2
-# cmask = torch.ones(3)
+cmask = torch.ones(max_K)
 
 print("Initial representation of the committor has been trained!")
 
@@ -71,7 +71,8 @@ K = max_K
 run_name = run_name + f"_K{K}"
 #<block Z>
 c_center = torch.tensor([0.0,0])
-centers_k = torch.stack((a_center,b_center,c_center),dim=0)
+# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
+centers_k = torch.stack((a_center,b_center,kcenters[2]),dim=0)
 escape_confs_list = []
 escape_times_list = []
 print("Calculating Flux...")
@@ -88,7 +89,7 @@ exit_indices_k    = torch.stack([torch.randperm(N) for _ in range(K)])
 
 
 
-transit_history_k = [[0] for _ in range(K)]
+transit_history_k = [[] for _ in range(K)]
 transit_k         = [-1]*K
 last_transit_k    = torch.zeros(K, dtype=torch.long)
 means_k           = []
@@ -372,12 +373,17 @@ for step in range(n_opt_steps):
                 continue
             # print(k_running_short_reporters)
             # print(k_running_short_reporters.shape)
-            if torch.min(torch.sqrt(torch.sum(torch.square(k_running_short_reporters[k].squeeze().reshape([-1,dim])[last_transit_k[k]:] -centers_k[j]), dim=1))) < cutoff: # k->j transition
+            disp_vecs = k_running_short_reporters[k].squeeze().reshape([-1,dim])[last_transit_k[k]:] -centers_k[j]
+            basin_dists = torch.sqrt(torch.sum(torch.square(disp_vecs),dim=1))
+            if basin_dists.shape[0] == 0:
+                continue
+            basin_min = torch.min(basin_dists)
+            if basin_min < cutoff: # k->j transition
                 print(f"TRANSIT {k}->{j}")
                 transit_k[k] = j
                 last_transit_k[k] = len(k_running_short_reporters[k].squeeze().reshape([-1,dim]))
                 index_counters_k[k] += 1
-                # transit_history_k[k].append() TODO
+                transit_history_k[k].append(j)
     # <split>
     # if torch.min(torch.sqrt(torch.sum(torch.square(a_running_short_reporters.reshape([-1, dim])[last_a_transit:] - b_center), axis = -1))) < cutoff:
     #     print("A Transit!")
@@ -401,7 +407,7 @@ for step in range(n_opt_steps):
         fig.set_size_inches(15.2, 4.8)
         axs['a'].contourf(X,Y, V_surface_numpy, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap',zorder=0)
         
-        cmaps  = ["winter", "cool",  "spring", "summer", "wistia"]
+        cmaps  = ["winter", "cool",  "copper", "Wistia", "brg"]
         levels = np.linspace(0.1, 0.9, 10)
         norm   = Normalize(vmin=levels.min(), vmax=levels.max())
 
@@ -466,7 +472,7 @@ for step in range(n_opt_steps):
         plt.tight_layout()
         fig.savefig(mpath(run_name + "_all.pdf"))
         plt.close()
-    
+        print(transit_history_k)
         # <split>
         # plt.tight_layout()
         # fig, axs  = plt.subplot_mosaic([['a', 'b'], ['a', 'b']], width_ratios = [1., 1.])
@@ -524,6 +530,12 @@ plt.savefig(mpath(run_name+"_committor.pdf"))
 print("SAVING")
 torch.save(net2.state_dict(), mpath(run_name+ ".pt"))
 torch.save(running_xs_all, mpath(run_name+"_rxs.pt"))
+torch.save(out_means_k, mpath(run_name + "_k.pt"))
+torch.save(centers_k, mpath(run_name + "_ctrs.pt"))
+
+d = {str(i): transit_history_k[i] for i in range(len(transit_history_k))}
+with open(mpath(run_name+'_exits.json'), 'w') as f:
+    json.dump(d, f)
 # <split>
 # plt.contourf(X,Y, V_surface, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap')
 # plt.contour(X, Y, net(grid_input).detach()[:,:,0].numpy(), levels = np.linspace(0.1, 0.9, n_windows), cmap = 'mycmap2')

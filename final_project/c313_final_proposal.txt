@@ -46,7 +46,18 @@ TODO:
     5. presentation
 
 
+TODO 5/20
+    get FEM working to validate stuff
+        DONE
+    prove that their algorithm fails on meaningful metastable states
+        find exact committors for softmin states
+            FEM executions saved as run_name + "_cfem"
+            net solutions saved as run_name + "_cnet"
+        make plots of mine vs theirs on single hop vs multihop
 
+    TODO remove all _old files
+
+    implement PCCA
 
 
 
