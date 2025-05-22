@@ -3,10 +3,12 @@ import os
 import json
 from json import JSONDecodeError
 
+max_K = 2
 class CommittorNet(torch.nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim, K=max_K):
         super(CommittorNet, self).__init__()
         self.dim = dim
+        self.K = K
         block = [torch.nn.Linear(dim, 50),
                       torch.nn.Tanh(),
                       torch.nn.Linear(50, max_K),]
@@ -18,9 +20,6 @@ class CommittorNet(torch.nn.Module):
 
 def mpath(name):
     return os.path.join("run_data",name)
-
-
-max_K = 4
 
 def masked_softargmax(x,mask):
     x = x.masked_fill(~mask.to(torch.bool), float('-inf'))

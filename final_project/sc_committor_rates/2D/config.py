@@ -175,7 +175,7 @@ center_dict = {
     "linear": line_centers(K=key_param, spacing = 1.5),
     "triangle": triangle_centers(K=key_param, radius=1.0),
     "square": square_center(s=1.5),
-    "dist_square": square_center(s=1.5,epsilon=.2)
+    "dist_square": square_center(s=1.5,epsilon=.4)
 }
 kcenters = center_dict[key]
 
