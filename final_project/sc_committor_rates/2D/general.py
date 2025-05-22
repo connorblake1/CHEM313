@@ -64,12 +64,11 @@ V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
 #<block Z>
-# c_center = torch.tensor([1.5,0])
+c_center = torch.tensor([1.5,0])
 centers_k = torch.stack((a_center,b_center),dim=0) # TODO
 escape_confs_list = []
 escape_times_list = []
 print("Calculating Flux...")
-# TODO change back to 1k
 for k in range(max_K):
     times, confs = sampling.flux_sample(V, beta, gamma, step_size, centers_k[k], cutoff, 1000, stride=1)
     escape_confs_list.append(confs.clone().reshape([-1,dim]).to(device).double().detach())
@@ -274,14 +273,10 @@ for step in range(n_opt_steps):
         
             o_short_targets, o_short_means = sampling.calculate_committor_estimates_multi(running_short_reporters.reshape([-1,dim]), net, centers_k, cutoff, n_reporter_trajectories, cmask)
             
-            a_short_targets = o_short_targets[:,0] # TODO remove
-            b_short_targets = o_short_targets[:,1]
             # print(a_short_targets, b_short_targets)
             # print(o_short_targets)
 
         batch_size = running_xs.size()[0]
-
-            
 
         # print("D: a_short_targets", a_short_targets.shape)
         # print("D: a_short_means", a_short_means.shape)
@@ -292,28 +287,29 @@ for step in range(n_opt_steps):
                 optimizer.zero_grad()
                 net.zero_grad()
                 indices = permutation[i:i+batch_size]
-                # log_loss,_ = training.half_log_loss( TODO
-                #     net,
-                #     running_xs.to(device)[indices],
-                #     a_short_targets.to(device)[indices],
-                #     b_short_targets.to(device)[indices],
-                #     None,
-                #     None,
-                #     i_a,
-                #     i_b,
-                #     cmask
-                # )
-
-                shuffled = running_xs.to(device)[indices]
-                stacked = torch.stack((a_short_targets[indices],b_short_targets[indices]),dim=1).to(device)
-                log_loss = training.half_log_loss_multi(
-                    net, 
-                    shuffled,
-                    stacked,
+                log_loss,_ = training.half_log_loss(
+                    net,
+                    running_xs.to(device)[indices],
+                    a_short_targets.to(device)[indices],
+                    b_short_targets.to(device)[indices],
+                    None,
+                    None,
+                    i_a,
+                    i_b,
                     cmask
                 )
+                total_loss = log_loss
 
-                total_loss = 2*log_loss
+                # shuffled = running_xs.to(device)[indices]
+                # stacked = torch.stack((a_short_targets[indices],b_short_targets[indices]),dim=1).to(device)
+                # log_loss = training.half_log_loss_multi(
+                #     net, 
+                #     shuffled,
+                #     stacked,
+                #     cmask
+                # )
+                # total_loss = 2*log_loss
+
                 total_loss.backward()
                 optimizer.step()
     # print()
@@ -423,9 +419,9 @@ for step in range(n_opt_steps):
         axs['a'].set_xlim(x[0],x[-1])
         axs['a'].set_ylim(y[0],y[-1])
         axs['a'].legend()
-    
+        # axs['a'].scatter(torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
                 
-        dt = 2 * (n_reporter_trajectories * n_reporter_steps).cpu().detach().numpy()
+        dt = 2 * (n_reporter_trajectories * n_reporter_steps).cpu().detach().numpy()*step_size.cpu().detach().numpy()
         out_means_k = torch.stack((means_k),dim=0)
         for k in range(K):
             cmap = plt.get_cmap(cmaps[k])
