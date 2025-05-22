@@ -3,6 +3,8 @@ import training
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
 import numpy as np
 from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, CommittorNet, run_name, x, y, beta, gamma, step_size, nice_name, mpath
 import json
@@ -15,7 +17,7 @@ from global_utils import max_K, cnmsam, dist, append_rate
 matplotlib.rcParams['text.usetex'] = False
 from matplotlib.colors import LinearSegmentedColormap
 cmap = LinearSegmentedColormap.from_list("mycmap", ['#1B346C','#01ABE9','#F1F8F1','#F54B1A'])
-cmap2 = LinearSegmentedColormap.from_list("mycmap2", ['#ffffff','#000000','#ffffff'])
+cmap2 = LinearSegmentedColormap.from_list("mycmap2", ['#000000','#ffffff'])
 cmap4 = LinearSegmentedColormap.from_list("mycmap4", ['#ffffff','#F54B1A'])
 cmap5 = LinearSegmentedColormap.from_list("mycmap5", ['#000000','#000000'])
 cmap6 = LinearSegmentedColormap.from_list("mycmap5", ['#ffffff','#ffffff'])
@@ -36,17 +38,19 @@ init_data = torch.zeros((n_windows, dim))
 for d in range(dim):
     init_data[:,d] = torch.linspace(a_center[d], b_center[d], n_windows)
 
-net = CommittorNet(dim=dim).to(device).double()
+# net = CommittorNet(dim=dim).to(device).double()
 net2 = CommittorNet(dim=dim).to(device).double()
 
+
 cmask = torch.arange(max_K) < 2
+# cmask = torch.ones(3)
 
 print("Initial representation of the committor has been trained!")
 
 # Run the optimization
 n_trials = 1
-n_opt_steps = 300
-optimizer = torch.optim.Adam(net.parameters(), lr = 1e-2)
+n_opt_steps = 700
+# optimizer = torch.optim.Adam(net.parameters(), lr = 1e-2)
 optimizer2 = torch.optim.Adam(net2.parameters(), lr = 1e-2)
 
 xs = init_data.to(device)
@@ -64,16 +68,15 @@ V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
 K = max_K
-if K != 2:
-    run_name = run_name + f"_{K}"
+run_name = run_name + f"_K{K}"
 #<block Z>
-c_center = torch.tensor([1.5,0])
-centers_k = torch.stack((a_center,b_center),dim=0)
+c_center = torch.tensor([0.0,0])
+centers_k = torch.stack((a_center,b_center,c_center),dim=0)
 escape_confs_list = []
 escape_times_list = []
 print("Calculating Flux...")
 for k in range(max_K): # TODO put back at 1k
-    times, confs = sampling.flux_sample(V, beta, gamma, step_size, centers_k[k], cutoff, 100, stride=1)
+    times, confs = sampling.flux_sample(V, beta, gamma, step_size, centers_k[k], cutoff, 1000, stride=1)
     escape_confs_list.append(confs.clone().reshape([-1,dim]).to(device).double().detach())
     escape_times_list.append(times)
 escape_confs_k = torch.stack(escape_confs_list)
@@ -126,9 +129,9 @@ k_running_short_reporters = torch.zeros([K,n_reporter_steps,dim])
 
 # START RUNNING
 for step in range(n_opt_steps):
-    optimizer.zero_grad()
+    # optimizer.zero_grad()
     optimizer2.zero_grad()
-    net.zero_grad()
+    # net.zero_grad()
     net2.zero_grad()
 
     #<block A>
@@ -152,6 +155,7 @@ for step in range(n_opt_steps):
         xs_list.append(xs_k)
     xs_k = torch.stack(xs_list, dim=0)
     # print("A: xs_k",xs_k.shape)
+    # print("A:", xs_k)
     # <split>
     # if step == 0 or a_transit == True:
     #     a_xs = a_escape_confs_list[a_exit_indices[a_index_counter]]
@@ -187,6 +191,7 @@ for step in range(n_opt_steps):
         k_short_reporters_list.append(k_short_reporters)
         times_k[k].append(np.mean(k_short_times))
     k_short_reporters = torch.stack(k_short_reporters_list,dim=0)
+    # print("B:", k_short_reporters)
     # print("B: k short reporters",k_short_reporters.shape) #st
     # print("B: len times_k",len(times_k),len(times_k[0]))
     # print()
@@ -216,6 +221,7 @@ for step in range(n_opt_steps):
         running_xs_all = k_running_xs.flatten(0,1)
     # print("C: xs_k",xs_k.shape)
     # print("C: k_short_reporters",k_short_reporters.shape)
+    # print(k_short_reporters)
     # print("C: k_running_short_reporters",k_running_short_reporters.shape)
     # print("C: running_short_reporters_all",running_short_reporters_all.shape)
     # print("C: k_running_xs",k_running_xs.shape)
@@ -249,6 +255,8 @@ for step in range(n_opt_steps):
     with torch.no_grad():
         short_targets, short_means = sampling.calculate_committor_estimates_multi(running_short_reporters_all.reshape([-1,dim]), net2, centers_k, cutoff, n_reporter_trajectories, cmask)
     # print("D: short_targets",short_targets.shape, "running_xs_all",running_xs_all.shape)
+    # print(short_targets)
+    # print(short_means)
     # print("D: short_means",short_means.shape)
     batch_size = running_xs_all.size()[0]
     for m in range(100):
@@ -270,10 +278,7 @@ for step in range(n_opt_steps):
     # <split>
     # for j in range(1): # Can go through multiple optimization steps per data collection step, if needed
     #     with torch.no_grad():
-    #         a_short_targets, b_short_targets, a_short_var, a_short_means = sampling.calculate_committor_estimates(running_short_reporters.reshape([-1, dim]), net, a_center, b_center, cutoff, n_reporter_trajectories, i_a, i_b, cmask)
-        
-    #         o_short_targets, o_short_means = sampling.calculate_committor_estimates_multi(running_short_reporters.reshape([-1,dim]), net, centers_k, cutoff, n_reporter_trajectories, cmask)
-            
+    #         a_short_targets, b_short_targets, a_short_var, a_short_means = sampling.calculate_committor_estimates(running_short_reporters.reshape([-1, dim]), net, a_center, b_center, cutoff, n_reporter_trajectories, i_a, i_b, cmask)            
     #         # print(a_short_targets, b_short_targets)
     #         # print(o_short_targets)
 
@@ -331,8 +336,7 @@ for step in range(n_opt_steps):
         # TODO export to dict
     # print("E: exit_tensor", exit_tensor.shape)
     # print("E: escape_times", escape_times_k.shape)
-    print()
-    print(f"<<<>>>> Step {step}: Rate Estimate = {rate_estimates.detach().cpu().numpy()}; Loss = {log_loss.item()}")#, Log Loss 2 = {log_loss_2.item()}") # TODO
+    print(f"Step {step}: Rate Estimate = {rate_estimates.detach().cpu().numpy()}; Loss = {float(log_loss.item()):.3f}")#, Log Loss 2 = {log_loss_2.item()}") # TODO
 
     # <split>
     # with torch.no_grad():
@@ -366,7 +370,9 @@ for step in range(n_opt_steps):
         for j in range(K):
             if k == j:
                 continue
-            if torch.min(torch.sqrt(torch.sum(torch.square(k_running_short_reporters[k].squeeze().reshape([-1,dim])[last_transit_k[k]:] -centers_k[j]), axis=-1))) < cutoff: # k->j transition
+            # print(k_running_short_reporters)
+            # print(k_running_short_reporters.shape)
+            if torch.min(torch.sqrt(torch.sum(torch.square(k_running_short_reporters[k].squeeze().reshape([-1,dim])[last_transit_k[k]:] -centers_k[j]), dim=1))) < cutoff: # k->j transition
                 print(f"TRANSIT {k}->{j}")
                 transit_k[k] = j
                 last_transit_k[k] = len(k_running_short_reporters[k].squeeze().reshape([-1,dim]))
@@ -395,10 +401,21 @@ for step in range(n_opt_steps):
         fig.set_size_inches(15.2, 4.8)
         axs['a'].contourf(X,Y, V_surface_numpy, levels=np.linspace(V_surface_min, 15, 35), cmap = 'mycmap',zorder=0)
         
-        cmaps = ['tab10', 'Set1', 'Dark2', 'tab20', 'Accent']
+        cmaps  = ["winter", "cool",  "spring", "summer", "wistia"]
+        levels = np.linspace(0.1, 0.9, 10)
+        norm   = Normalize(vmin=levels.min(), vmax=levels.max())
+
         for k in range(K):
-                cs = axs['a'].contour(X, Y, cnmsam(net2,grid_input,cmask)[...,k].cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap=cmaps[k])
-                cbar = fig.colorbar(cs, ax=axs['a'], ticks=np.linspace(0,1,11))
+            data_k   = cnmsam(net2, grid_input, cmask)[..., k].cpu().detach().numpy()
+            cs       = axs['a'].contour(
+                        X, Y, data_k,
+                        levels=levels,
+                        cmap=cmaps[k],
+                        norm=norm
+                    )
+            mappable = ScalarMappable(norm=norm, cmap=cmaps[k])
+            cbar     = fig.colorbar(mappable, ax=axs['a'])
+            cbar.set_label(rf'$q_{{{k}}}$', fontsize=14)
 
         data_reshaped = torch.reshape(running_xs_all, [-1, 2]).detach().numpy()
         
@@ -414,7 +431,7 @@ for step in range(n_opt_steps):
                     linewidth=2,
                     color='red',
                     fill=True,
-                    label=f'$k={k}$'
+                    # label=f'$k={k}$'
                 )
             axs['a'].add_patch(circle)
             xk, yk = centers_k[k]
@@ -424,7 +441,7 @@ for step in range(n_opt_steps):
         axs['a'].set_ylabel(r"y", size = 16)
         axs['a'].set_xlim(x[0],x[-1])
         axs['a'].set_ylim(y[0],y[-1])
-        axs['a'].legend()
+        # axs['a'].legend()
                 
         dt = 2 * (n_reporter_trajectories * n_reporter_steps).cpu().detach().numpy()*step_size.cpu().detach().numpy()
         out_means_k = torch.stack((means_k),dim=0)
@@ -437,15 +454,17 @@ for step in range(n_opt_steps):
                 color=color,
                 label=f'$k={k}$'
             )
-        axs['b'].legend()
+        axs['b'].legend(fontsize=16)
 
 
         axs['b'].set_yscale('log')
-        axs['b'].set_xlabel(r"Sampling Time ($\tau$)", size = 12)
-        axs['b'].set_ylabel(r"Rate ($\tau^{-1}$)", size = 12)
+        axs['b'].set_xlabel(r"Sampling Time ($\tau$)", size = 16)
+        axs['b'].set_ylabel(r"Rate ($\tau^{-1}$)", size = 16)
         axs['b'].set_ylim(1e-8, 1e1)
+        axs['b'].tick_params(axis='y', labelsize=14)
+        axs['b'].tick_params(axis='x', labelsize=14)
         plt.tight_layout()
-        fig.savefig(mpath(run_name + "_2.pdf"))
+        fig.savefig(mpath(run_name + "_all.pdf"))
         plt.close()
     
         # <split>

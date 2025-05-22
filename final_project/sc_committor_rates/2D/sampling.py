@@ -51,12 +51,12 @@ def take_reporter_steps_multi(input_xs, V, beta, gamma, step_size, n_trajectorie
     step_sizes = torch.repeat_interleave(step_size, xs.size()[0], axis = 0)
     steps = torch.clone(step_sizes)
     zeros = torch.zeros(xs.size()[0]).to(device)
-    for k in range(centers.shape[0]):
+    for k in range(max_K):
         step_sizes = torch.where(dist(xs,centers[k]) < cutoff, zeros, step_sizes)
     for q in range(n_steps):
         xs = Langevin_step(xs, V, beta, gamma, step_sizes)
         steps += step_sizes
-        for k in range(centers.shape[0]):
+        for k in range(max_K):
             step_sizes = torch.where(dist(xs,centers[k]) < cutoff, zeros, step_sizes)
         # Truncate reporter length once one reporter reaches a basin:
         if adaptive:
@@ -117,9 +117,9 @@ def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_traject
 
 def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories, cmask):
     N, dim = xs.shape
-    K = centers.shape[0]
+    K = max_K
     preds = cnmsam(net, xs, cmask)
-    
+    # print("preds",preds)
     dists = (xs.unsqueeze(1) - centers.unsqueeze(0)).norm(dim=2)
     for k in range(K):
         mk = dists[:, k] < cutoff

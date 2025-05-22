@@ -130,12 +130,12 @@ if validation_mode:
 
 ## Improved General Transition Well
 key = "linear"
-key_param = 3
+key_param = 5
 run_name = "wells_" + key
 
 run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 1
+b_i = 4
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
 nice_name = ""
