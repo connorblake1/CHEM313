@@ -275,12 +275,13 @@ for step in range(n_opt_steps):
             a_short_targets, b_short_targets, a_short_var, a_short_means = sampling.calculate_committor_estimates(running_short_reporters.reshape([-1, dim]), net, a_center, b_center, cutoff, n_reporter_trajectories, i_a, i_b, cmask)
         
             o_short_targets, o_short_means = sampling.calculate_committor_estimates_multi(running_short_reporters.reshape([-1,dim]), net, centers_k, cutoff, n_reporter_trajectories, cmask)
+            
             # a_short_targets = o_short_targets[:,0]
             # b_short_targets = o_short_targets[:,1]
 
 
-            print(a_short_targets, b_short_targets)
-            print(o_short_targets)
+            # print(a_short_targets, b_short_targets)
+            # print(o_short_targets)
 
         batch_size = running_xs.size()[0]
 
@@ -326,7 +327,7 @@ for step in range(n_opt_steps):
     # Estimate rates
     #<block E>
     with torch.no_grad():
-        exit_tensor = torch.tensor(escape_confs_k.clone().detach())
+        exit_tensor = torch.tensor(escape_confs_k.numpy())
         exit_predictions = cnmsam(net2, exit_tensor, cmask) # [K,N,K]
         exit_predictions = exit_predictions.diagonal(dim1=0, dim2=2) # [N,K]
         mean_exit_predictions = torch.mean(exit_predictions,dim=0)

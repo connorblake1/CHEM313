@@ -68,12 +68,16 @@ def take_reporter_steps_multi(input_xs, V, beta, gamma, step_size, n_trajectorie
     return xs.reshape([-1, n_trajectories, xs.size()[-1]]), (steps/step_size).cpu().detach().numpy()
 
 def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_trajectories, i_a, i_b, cmask):
+    print()
+    print("Original")
     print("xs",xs.shape,"ac,bc",a_center.shape,b_center.shape)
 
     zeros = torch.zeros(xs.size()[0]).to(device)
     ones = torch.ones(xs.size()[0]).to(device)
     a_estimates = cnmsam(net,xs,cmask)[...,i_a]
+    print("nnout",a_estimates.shape)
     xs_for_var = torch.reshape(xs, [int(xs.size()[0]/n_trajectories), n_trajectories, 2])
+    print("xs reshaped",xs_for_var.shape)
     a_estimates = torch.where(dist(xs, a_center) < cutoff, zeros, a_estimates)
     a_estimates = torch.where(dist(xs, b_center) < cutoff, ones, a_estimates)
     a_estimates = torch.reshape(a_estimates, [int(xs.size()[0]/n_trajectories), n_trajectories])
@@ -88,32 +92,57 @@ def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_traject
     b_estimates = torch.reshape(b_estimates, [int(xs.size()[0]/n_trajectories), n_trajectories])
     final_b_estimates = torch.mean(b_estimates, axis = 1)
     final_b_var = torch.sum(torch.var(xs_for_var, axis = 1))
+    print("final_esetimates_a",final_a_estimates.shape)
     return final_a_estimates, final_b_estimates, final_a_var.detach(), final_a_means.detach()
 
-def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories, cmask):
-    # xs.shape = [N,dim]
-    print("MULTI")
-    print("xs",xs.shape)
-    N = xs.shape[0]
-    K = max_K
-    def hot_code(i):
-        mask = torch.zeros([N,K]).to(device)
-        mask[:,i] = 1
-        return mask
+# def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories, cmask):
+#     # xs.shape = [N,dim]
+#     print("MULTI")
+#     print("xs",xs.shape)
+#     N = xs.shape[0]
+#     K = max_K
+#     def hot_code(i):
+#         mask = torch.ones([N,K]).to(device)
+#         mask[:,i] = 0
+#         return mask
 
-    estimates = cnmsam(net,xs,cmask) # [N,K] dims
-    xs_for_var = torch.reshape(xs, [int(N/n_trajectories), n_trajectories, 2])
-    for k in range(estimates.shape[1]):
-        dist_mat = xs.unsqueeze(1) - centers.unsqueeze(0) # [N,K,dim]
-        dists = dist_mat.norm(dim=2)
-        estimates = torch.where(dists < cutoff, hot_code(k), estimates)
-    estimates = estimates.permute([1,0])
-    estimates = torch.reshape(estimates,[K,int(N/n_trajectories), n_trajectories])
-    final_estimates = torch.mean(estimates, axis=2)
-    final_estimates = final_estimates.permute([1,0]) # [short, K]
-    final_means = torch.mean(xs_for_var, axis=1)
-    print("out_estimeates",final_estimates.shape)
-    return final_estimates, final_means
+#     estimates = cnmsam(net,xs,cmask) # [N,K] dims
+#     print("nnout",estimates.shape)
+#     xs_for_var = torch.reshape(xs, [int(N/n_trajectories), n_trajectories, 2])
+#     print("xs reshaped",xs_for_var.shape)
+#     dist_mat = xs.unsqueeze(1) - centers.unsqueeze(0) # [N,K,dim]
+#     print("distmat",dist_mat.shape)
+#     dists = dist_mat.norm(dim=2)
+#     for k in range(K):
+#         # centers is [K,dims]
+#         estimates = torch.where(dists < cutoff, hot_code(k), estimates)
+#     estimates = torch.reshape(estimates,[int(N/n_trajectories), n_trajectories,K])
+#     final_estimates = torch.mean(estimates, axis=1)
+#     final_means = torch.mean(xs_for_var, axis=1)
+#     print("out_estimates",final_estimates.shape)
+#     return final_estimates, final_means
+
+def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories, cmask):
+    N, dim = xs.shape
+    K = centers.shape[0]
+    preds = cnmsam(net, xs, cmask)
+    
+    dists = (xs.unsqueeze(1) - centers.unsqueeze(0)).norm(dim=2)
+    for k in range(K):
+        mk = dists[:, k] < cutoff
+        preds[mk] = 0
+        preds[mk, k] = 1
+
+    M = N // n_trajectories
+    xs_var = xs.view(M, n_trajectories, dim)
+    preds_var = preds.view(M, n_trajectories, K)
+
+    final_estimates = preds_var.mean(dim=1)
+    final_var       = xs_var.var(dim=1).sum(dim=1)
+    final_means     = xs_var.mean(dim=1)
+
+    return final_estimates, final_means.detach()
+
 
 def flux_sample(V, beta, gamma, step_size, a_center, basin_cutoff, n_crossings, stride = 1):
     # always going from A->B
