@@ -130,8 +130,8 @@ def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories
     dists = (xs.unsqueeze(1) - centers.unsqueeze(0)).norm(dim=2)
     for k in range(K):
         mk = dists[:, k] < cutoff
-        preds[mk] = 0
-        preds[mk, k] = 1
+        preds[mk] = 1
+        preds[mk, k] = 0
 
     M = N // n_trajectories
     xs_var = xs.view(M, n_trajectories, dim)
