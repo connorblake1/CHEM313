@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import numpy as np
-from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, run_name, x, y, beta, gamma, step_size, nice_name, kcenters
+from config import V, dim, a_center, b_center, n_windows, cutoff, n_reporter_steps, batch_size, run_name, x, y, beta, gamma, step_size, nice_name, kcenters, kheights
 import json
 import os
 from json import JSONDecodeError
@@ -71,8 +71,8 @@ V_surface_min = V_surface_numpy.min()
 K = max_K
 cmask = torch.arange(max_K) < 2
 cmask = torch.ones(max_K)
-centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2]),dim=0)
-# centers_k = torch.stack((a_center,b_center),dim=0)
+# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2]),dim=0)
+centers_k = torch.stack((a_center,b_center),dim=0)
 ##<\CHANGE THESE PARAMETERS>
 
 

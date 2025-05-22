@@ -129,7 +129,7 @@ elif key == "triangle":
 
 dim = 2
 b_default = -20.
-def make_V_from_centers(centers):
+def make_V_from_centers(centers,heights=None):
     # def V(x): # gaussian, too much leakage
     #     # x: shape (N, 2)
     #     diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
@@ -145,9 +145,12 @@ def make_V_from_centers(centers):
 
     #     return V_wells + V_confine + 2*c_hard*x[:,1]**2                     # (N,)
     def V(x, b=b_default):
-        diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
-        sq_dist = torch.sum(diff**2, dim=-1)            # (N, M)
-        return -torch.logsumexp(b*sq_dist,dim=1)
+        # x [N,dim]
+        diff = x[:, None, :] - centers[None, :, :]      # (N, M, dim)
+        wells_k = torch.sum(diff**2, dim=-1)            # (N, M)
+        if heights is not None:
+            wells_k = wells_k + heights.unsqueeze(0)
+        return -torch.logsumexp(b*wells_k,dim=1)
     return V
 
 def line_centers(K, spacing=1.5):
@@ -177,9 +180,26 @@ center_dict = {
     "square": square_center(s=1.5),
     "dist_square": square_center(s=1.5,epsilon=.4)
 }
+
+low_height = torch.tensor([0.0])
+
+mid_height = torch.tensor([0.2])
+
+# heights = [mid_height]*(center_dict[key].shape[1])
+# heights[a_i] = low_height
+# heights[b_i] = low_height # TODO
+heights = [low_height,mid_height,mid_height,low_height]
+
+# height_dict = {
+#     "linear": None,
+#     "triangle": None,
+#     "square": None,
+#     "dist_square": None
+# }
+kheights = torch.stack(heights).squeeze()
 kcenters = center_dict[key]
 
-V = make_V_from_centers(kcenters)
+V = make_V_from_centers(kcenters,kheights)
 
 def bounds(centers, margin=1, spacing=100):
     # centers: shape (N, 2)
