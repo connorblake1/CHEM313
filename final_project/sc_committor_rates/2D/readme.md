@@ -5,7 +5,7 @@ The following files have been entirely rewritten to fit my needs or added to the
 - `sampling.py`, `training.py` contain subroutines called in `general.py` for the loss and Langevin dynamics
 - `config.py` contains a list of custom potentials whose parameters can easily be tweaked. 
 - `global_utils.py` contains the hyperparameter `max_K` which dictates how many metastable basins to look for
-- `fem_utils.py` computes the analytic committor using finite element method on the 2D domain. It must be run in a conda environment containing the library fenics which is most easily installed via conda (or try `fenics.yml`). In order to obtain fem files for a given setup, 
+- `fem_utils.py` computes the "exact" numerical committor using finite element method on the 2D domain. It must be run in a conda environment containing the library fenics which is most easily installed via conda (or try `fenics.yml`). This environment does not play nicely with pytorch. See below for more details.
 
 
 ## Running Simulations
