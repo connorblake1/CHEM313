@@ -22,9 +22,7 @@ device = torch.device('cpu')
 def mpath(name):
     return os.path.join("run_data",name)
 
-validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
-if validation_mode:
-    from fem_utils import *
+
 
 
 
@@ -129,6 +127,7 @@ if validation_mode:
 
 
 ## Improved General Transition Well
+##<CHANGE THESE PARAMETERS>
 key = "square"
 key_param = 0
 run_name = "wells_" + key
@@ -137,6 +136,10 @@ run_name = run_name + "_" + str(key_param)
 a_i = 0
 b_i = 3
 run_name = run_name + f"_a{a_i}_b{b_i}"
+validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
+##<\CHANGE THESE PARAMETERS>
+if validation_mode:
+    from fem_utils import *
 
 nice_name = ""
 if key == "linear":

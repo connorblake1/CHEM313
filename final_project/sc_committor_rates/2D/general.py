@@ -42,8 +42,7 @@ for d in range(dim):
 net2 = CommittorNet(dim=dim).to(device).double()
 
 
-cmask = torch.arange(max_K) < 2
-cmask = torch.ones(max_K)
+
 
 print("Initial representation of the committor has been trained!")
 
@@ -67,13 +66,19 @@ V_surface_numpy = V_surface.cpu().detach().numpy()
 V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
+##<CHANGE THESE PARAMETERS>
+
 K = max_K
-run_name = run_name + f"_K{K}"
-#<block Z>
-# c_center = torch.tensor([0.0,0])
-# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
+cmask = torch.arange(max_K) < 2
+cmask = torch.ones(max_K)
 centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2]),dim=0)
 # centers_k = torch.stack((a_center,b_center),dim=0)
+##<\CHANGE THESE PARAMETERS>
+
+
+run_name = run_name + f"_K{K}"
+#<block Z>
+
 
 escape_confs_list = []
 escape_times_list = []
