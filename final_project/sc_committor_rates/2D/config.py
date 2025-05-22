@@ -129,13 +129,13 @@ if validation_mode:
 
 
 ## Improved General Transition Well
-key = "triangle"
-key_param = 3
+key = "square"
+key_param = 0
 run_name = "wells_" + key
 
 run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 1
+b_i = 3
 run_name = run_name + f"_a{a_i}_b{b_i}"
 
 nice_name = ""
@@ -180,19 +180,19 @@ def triangle_centers(K,radius=.9):
     y = radius * torch.sin(angles)
     return torch.stack([x, y], dim=1)  # shape (3,2)
 
-# def square_center(s=1.5,epsilon=0.):
-#     return torch.stack(
-#         (torch.tensor([0.,0.]),
-#         torch.tensor([s,0.]),
-#         torch.tensor([0.,s+epsilon]),
-#         torch.tensor([s,s])),
-#         dims=1
-#     )
+def square_center(s=1.5, epsilon=0.):
+    return torch.stack(
+        (torch.tensor([0.,0.]),
+        torch.tensor([s,0.]),
+        torch.tensor([0.,s+epsilon]),
+        torch.tensor([s,s])),
+    )
 
 center_dict = {
     "linear": line_centers(K=key_param, spacing = 1.5),
     "triangle": triangle_centers(K=key_param, radius=1.0),
-    # "square": square_center(s=1.5)
+    "square": square_center(s=1.5),
+    "dist_square": square_center(s=1.5,epsilon=.2)
 }
 kcenters = center_dict[key]
 

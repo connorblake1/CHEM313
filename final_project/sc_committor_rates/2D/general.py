@@ -70,9 +70,11 @@ V_surface_min = V_surface_numpy.min()
 K = max_K
 run_name = run_name + f"_K{K}"
 #<block Z>
-c_center = torch.tensor([0.0,0])
+# c_center = torch.tensor([0.0,0])
 # centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
-centers_k = torch.stack((a_center,b_center,kcenters[2]),dim=0)
+centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2]),dim=0)
+# centers_k = torch.stack((a_center,b_center),dim=0)
+
 escape_confs_list = []
 escape_times_list = []
 print("Calculating Flux...")

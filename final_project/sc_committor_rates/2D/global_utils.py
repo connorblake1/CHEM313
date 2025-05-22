@@ -3,7 +3,7 @@ import os
 import json
 from json import JSONDecodeError
 
-max_K = 3
+max_K = 4
 
 def masked_softargmax(x,mask):
     x = x.masked_fill(~mask.to(torch.bool), float('-inf'))
