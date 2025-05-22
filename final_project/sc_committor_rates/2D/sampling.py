@@ -68,16 +68,10 @@ def take_reporter_steps_multi(input_xs, V, beta, gamma, step_size, n_trajectorie
     return xs.reshape([-1, n_trajectories, xs.size()[-1]]), (steps/step_size).cpu().detach().numpy()
 
 def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_trajectories, i_a, i_b, cmask):
-    print()
-    print("Original")
-    print("xs",xs.shape,"ac,bc",a_center.shape,b_center.shape)
-
     zeros = torch.zeros(xs.size()[0]).to(device)
     ones = torch.ones(xs.size()[0]).to(device)
     a_estimates = cnmsam(net,xs,cmask)[...,i_a]
-    print("nnout",a_estimates.shape)
     xs_for_var = torch.reshape(xs, [int(xs.size()[0]/n_trajectories), n_trajectories, 2])
-    print("xs reshaped",xs_for_var.shape)
     a_estimates = torch.where(dist(xs, a_center) < cutoff, zeros, a_estimates)
     a_estimates = torch.where(dist(xs, b_center) < cutoff, ones, a_estimates)
     a_estimates = torch.reshape(a_estimates, [int(xs.size()[0]/n_trajectories), n_trajectories])
@@ -92,7 +86,6 @@ def calculate_committor_estimates(xs, net, a_center, b_center, cutoff, n_traject
     b_estimates = torch.reshape(b_estimates, [int(xs.size()[0]/n_trajectories), n_trajectories])
     final_b_estimates = torch.mean(b_estimates, axis = 1)
     final_b_var = torch.sum(torch.var(xs_for_var, axis = 1))
-    print("final_esetimates_a",final_a_estimates.shape)
     return final_a_estimates, final_b_estimates, final_a_var.detach(), final_a_means.detach()
 
 # def calculate_committor_estimates_multi(xs, net, centers, cutoff, n_trajectories, cmask):
@@ -160,7 +153,6 @@ def flux_sample(V, beta, gamma, step_size, a_center, basin_cutoff, n_crossings, 
         for i in range(stride):
             x = Langevin_step(x, V, beta, gamma, step_size)
         n_steps += stride
-        # print(x)
         if torch.sqrt(torch.sum(torch.square(x - a_center))) > basin_cutoff and in_basin:
             just_left_flag = True
             #print("Leaving Basin")

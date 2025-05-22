@@ -63,14 +63,17 @@ V_surface_numpy = V_surface.cpu().detach().numpy()
 V_surface_min = V_surface_numpy.min()
 # Calculate Flux out of the basins
 
+K = max_K
+if K != 2:
+    run_name = run_name + f"_{K}"
 #<block Z>
 c_center = torch.tensor([1.5,0])
-centers_k = torch.stack((a_center,b_center),dim=0) # TODO
+centers_k = torch.stack((a_center,b_center),dim=0)
 escape_confs_list = []
 escape_times_list = []
 print("Calculating Flux...")
-for k in range(max_K):
-    times, confs = sampling.flux_sample(V, beta, gamma, step_size, centers_k[k], cutoff, 1000, stride=1)
+for k in range(max_K): # TODO put back at 1k
+    times, confs = sampling.flux_sample(V, beta, gamma, step_size, centers_k[k], cutoff, 100, stride=1)
     escape_confs_list.append(confs.clone().reshape([-1,dim]).to(device).double().detach())
     escape_times_list.append(times)
 escape_confs_k = torch.stack(escape_confs_list)
@@ -93,8 +96,8 @@ index_counters_k  = torch.zeros(K, dtype=torch.long)
 k_running_short_reporters = torch.zeros([K,n_reporter_steps,dim])
 
 # <split>
-a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, cutoff, 1000, stride = 1) 
-b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, cutoff, 1000, stride = 1)
+a_escape_times, a_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, a_center, cutoff, 100, stride = 1) 
+b_escape_times, b_escape_confs = sampling.flux_sample(V, beta, gamma, step_size, b_center, cutoff, 100, stride = 1)
 a_escape_confs_list = a_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
 b_escape_confs_list = b_escape_confs.clone().reshape([-1,dim]).to(device).double().detach()
 running_a_exit_confs = []
@@ -176,7 +179,7 @@ for step in range(n_opt_steps):
         _, b_indices = torch.sort(b_weights, descending = True)
         b_indices = b_indices[:1]
         b_xs = b_running_short_reporters.squeeze().reshape([-1, dim])[last_b_transit:][b_indices]# noqa: F821
-    print("A: a_xs",a_xs.shape)
+    # print("A: a_xs",a_xs.shape)
     #<\block A>
 
     #<block B>
@@ -399,7 +402,12 @@ for step in range(n_opt_steps):
                 cs = axs['a'].contour(X, Y, cnmsam(net2,grid_input,cmask)[...,k].cpu().detach().numpy(), levels = np.linspace(0.1, 0.9, 9), cmap=cmaps[k])
                 cbar = fig.colorbar(cs, ax=axs['a'], ticks=np.linspace(0,1,11))
 
-        # axs['a'].scatter(torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
+        data_reshaped = torch.reshape(running_xs_all, [-1, 2]).detach().numpy()
+        
+        for k in range(K):
+            with torch.no_grad():
+                c_k = cnmsam(net2,torch.tensor(data_reshaped),cmask)[...,k]
+            axs['a'].scatter(data_reshaped[:,0], data_reshaped[:,1], c = c_k, cmap = 'mycmap2', alpha = 1)
  
         for k in range(K):
             circle = plt.Circle(
@@ -419,7 +427,7 @@ for step in range(n_opt_steps):
         axs['a'].set_xlim(x[0],x[-1])
         axs['a'].set_ylim(y[0],y[-1])
         axs['a'].legend()
-        # axs['a'].scatter(torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
+        axs['a'].scatter(torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,0], torch.reshape(running_xs_all, [-1, 2]).detach().numpy()[:,1], c = a_short_var, cmap = 'mycmap2', alpha = 1)
                 
         dt = 2 * (n_reporter_trajectories * n_reporter_steps).cpu().detach().numpy()*step_size.cpu().detach().numpy()
         out_means_k = torch.stack((means_k),dim=0)
