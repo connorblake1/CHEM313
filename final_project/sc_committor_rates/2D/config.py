@@ -130,20 +130,7 @@ elif key == "triangle":
 dim = 2
 b_default = -20.
 def make_V_from_centers(centers,heights=None):
-    # def V(x): # gaussian, too much leakage
-    #     # x: shape (N, 2)
-    #     diff = x[:, None, :] - centers[None, :, :]      # (N, M, 2)
-    #     sq_dist = torch.sum(diff**2, dim=-1)            # (N, M)
-    #     wells = torch.exp(-sq_dist / (2 * b**2))        # (N, M)
-    #     V_wells = -a * wells.sum(dim=1)                 # (N,)
 
-    #     r2 = torch.sum(x**2, dim=1)                     # (N,)
-    #     outermost_r2 = torch.max(torch.sum(centers**2, dim=1))  # scalar
-    #     soft_mask = (r2 <= outermost_r2 + margin).float()
-    #     hard_mask = 1.0 - soft_mask
-    #     V_confine = c_soft * r2 * soft_mask + c_hard * r2 * hard_mask
-
-    #     return V_wells + V_confine + 2*c_hard*x[:,1]**2                     # (N,)
     def V(x, b=b_default):
         # x [N,dim]
         diff = x[:, None, :] - centers[None, :, :]      # (N, M, dim)

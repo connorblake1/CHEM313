@@ -3,7 +3,7 @@ import os
 import json
 from json import JSONDecodeError
 
-max_K = 2
+max_K = 4
 class CommittorNet(torch.nn.Module):
     def __init__(self, dim, K=max_K):
         super(CommittorNet, self).__init__()

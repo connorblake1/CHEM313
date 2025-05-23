@@ -72,7 +72,14 @@ K = max_K
 # cmask = torch.arange(max_K) < 2
 cmask = torch.ones(max_K)
 # centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
-centers_k = torch.stack((a_center,b_center),dim=0)
+# centers_k = torch.stack((a_center,b_center),dim=0)
+
+centers_k = torch.tensor(
+    [[-2.9428, -0.0838],
+    [-1.5254, -0.0344],
+    [ 1.4761,  0.0231],
+    [ 3.0663, -0.0864]]
+)
 ##<\CHANGE THESE PARAMETERS>
 
 
