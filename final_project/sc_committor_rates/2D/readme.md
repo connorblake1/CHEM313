@@ -16,7 +16,7 @@ The following files have been entirely rewritten to fit my needs or added to the
 2. Run `python general.py` in the conda environment `md_sims` from the directory `2D`.
 
 ## Computing Markov State Models
-
+See `msm.py`
 
 ## Running FEM
 1. Change to the `fenics` conda environment.
