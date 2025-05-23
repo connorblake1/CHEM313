@@ -253,7 +253,7 @@ if validation_mode:
             b=np.load(mpath(run_name + "_gridfem.npy")),
             X=X,
             Y=Y,
-            filename=mpath(run_name + f"_{i}_grid_comparison.pdf"),
+            filename=mpath(run_name + f"_K{max_K}_{i}_grid_comparison.pdf"),
             title_1=f"A: NN Committor {i}",
             title_2="B: FEM Committor",
         )
