@@ -69,9 +69,9 @@ V_surface_min = V_surface_numpy.min()
 ##<CHANGE THESE PARAMETERS>
 
 K = max_K
-cmask = torch.arange(max_K) < 2
+# cmask = torch.arange(max_K) < 2
 cmask = torch.ones(max_K)
-# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2]),dim=0)
+# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
 centers_k = torch.stack((a_center,b_center),dim=0)
 ##<\CHANGE THESE PARAMETERS>
 
@@ -417,11 +417,10 @@ for step in range(n_opt_steps):
         cmaps  = ["winter", "cool",  "copper", "Wistia", "brg"]
         levels = np.linspace(0.1, 0.9, 10)
         norm   = Normalize(vmin=levels.min(), vmax=levels.max())
-
-        for k in range(K):
-            data_k   = 1.0 - cnmsam(net2, grid_input, cmask)[..., k].cpu().detach().numpy()
-            cs       = axs['a'].contour(
-                        X, Y, data_k,
+        data_k   = 1. - cnmsam(net2, grid_input, cmask).cpu().detach().numpy()
+        for k in range(2):
+            cs  = axs['a'].contour(
+                        X, Y, data_k[...,k],
                         levels=levels,
                         cmap=cmaps[k],
                         norm=norm
@@ -432,10 +431,10 @@ for step in range(n_opt_steps):
 
         data_reshaped = torch.reshape(running_xs_all, [-1, 2]).detach().numpy()
         
-        for k in range(K):
+        if max_K == 2:
             with torch.no_grad():
-                c_k = cnmsam(net2,torch.tensor(data_reshaped),cmask)[...,k]
-            axs['a'].scatter(data_reshaped[:,0], data_reshaped[:,1], c = c_k, cmap = 'mycmap2', alpha = 1)
+                c0 = cnmsam(net2,torch.tensor(data_reshaped),cmask)[...,0]
+            axs['a'].scatter(data_reshaped[:,0], data_reshaped[:,1], c = c0, cmap = 'mycmap2', alpha = 1)
  
         for k in range(K):
             circle = plt.Circle(

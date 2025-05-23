@@ -9,9 +9,15 @@ class CommittorNet(torch.nn.Module):
         super(CommittorNet, self).__init__()
         self.dim = dim
         self.K = K
-        block = [torch.nn.Linear(dim, 50),
-                      torch.nn.Tanh(),
-                      torch.nn.Linear(50, max_K),]
+        block = [
+            torch.nn.Linear(dim, 50),
+            torch.nn.Tanh(),
+            torch.nn.Linear(50,50), 
+            torch.nn.Tanh(),
+            torch.nn.Linear(50,50), 
+            torch.nn.Tanh(),
+            torch.nn.Linear(50, max_K)
+        ]
         self.Block = torch.nn.Sequential(*block)
     
     def forward(self, x):
@@ -26,7 +32,8 @@ def masked_softargmax(x,mask):
     return torch.softmax(x,dim=-1)
 
 def cnmsam(net, t, mask):  # call net masked soft arg max
-    return masked_softargmax(net(t),mask)
+    p_k = masked_softargmax(net(t),mask) # prob goes to basin k, sum to 1
+    return 1 - p_k # P(next basin != k), small and what we want
 
 def dist(x, y):
     return torch.sqrt(torch.sum(torch.square(x-y), axis = -1))
