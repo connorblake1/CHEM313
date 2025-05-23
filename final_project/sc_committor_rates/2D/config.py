@@ -117,6 +117,13 @@ a_i = 0
 b_i = 4
 run_name = run_name + f"_a{a_i}_b{b_i}"
 validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
+
+
+# there should be as many heights as there are wells
+low_height = torch.tensor([0.0])
+mid_height = torch.tensor([0.2])
+heights = [low_height,mid_height,mid_height,mid_height,low_height]
+
 ##<\CHANGE THESE PARAMETERS>
 if validation_mode:
     from fem_utils import *
@@ -168,20 +175,6 @@ center_dict = {
     "dist_square": square_center(s=1.5,epsilon=.4)
 }
 
-low_height = torch.tensor([0.0])
-mid_height = torch.tensor([0.2])
-
-# heights = [mid_height]*(center_dict[key].shape[1])
-# heights[a_i] = low_height
-# heights[b_i] = low_height # TODO
-heights = [low_height,mid_height,mid_height,mid_height,low_height]
-
-# height_dict = {
-#     "linear": None,
-#     "triangle": None,
-#     "square": None,
-#     "dist_square": None
-# }
 kheights = torch.stack(heights).squeeze()
 kcenters = center_dict[key]
 
@@ -220,11 +213,24 @@ gen_V_contour(x,y,V,nice_name,mpath(run_name+"_contour.png"),a_center,b_center,N
 if validation_mode:
     X,Y = torch.meshgrid(x,y)
     # generates NN commitor npy file
-    if os.path.exists(mpath(run_name + ".pt")):
-        evaluate_committor_on_grid(mpath(run_name + ".pt"), X, Y, CommittorNet)
-    gen_V_contour(x,y,V,nice_name,mpath(run_name+"_contour_com.png"),a_center=a_center,b_center=b_center, committor_file= mpath(run_name + "_gridnn.npy") if os.path.exists(mpath(run_name + "_gridnn.npy")) else None)
-
-    V_expr_run = SoftMinPotential(kcenters,b_default)
+    print(run_name + f"_K{max_K}.pt")
+    if os.path.exists(mpath(run_name + f"_K{max_K}.pt")):
+        evaluate_committor_on_grid(mpath(run_name + f"_K{max_K}.pt"), X, Y, CommittorNet)
+    else:
+        print("Failed to generate _gridnn file. .pt weights model not found")
+        exit()
+    print("Generating Contour(s)")
+    for i in range(max_K):
+        fname = mpath(run_name + f"_K{max_K}_{i}_gridnn.npy")
+        file_found = os.path.exists(fname)
+        if not file_found:
+            print(f"{fname} not found")
+            continue
+        print(f"Generating {fname}")
+        gen_V_contour(x,y,V,nice_name,mpath(run_name+f"_K{max_K}_contour_com.png"),a_center=a_center,b_center=b_center, committor_file=fname)
+    print("Running gridfem")
+    # if not os.path.exists(mpath(run_name + "_gridfem")):
+    V_expr_run = SoftMinPotential(kcenters,kheights,b_default)
     compute_committor(
         V_expr_run,
         a_center=a_center,
@@ -240,15 +246,17 @@ if validation_mode:
         radius=float(cutoff),
         out_file=mpath(run_name+"_gridfem")
     ) # generates FEM solution npy file
-    compare_committors(
-        a=np.load(mpath(run_name + "_gridnn.npy")),
-        b=np.load(mpath(run_name + "_gridfem.npy")),
-        X=X,
-        Y=Y,
-        filename=mpath(run_name + "_grid_comparison.pdf"),
-        title_1="A: NN Committor",
-        title_2="B: FEM Committor",
-    )
+    print("Comparing Committors")
+    for i in range(max_K):
+        compare_committors(
+            a=np.load(mpath(run_name + f"_K{max_K}_{i}_gridnn.npy")),
+            b=np.load(mpath(run_name + "_gridfem.npy")),
+            X=X,
+            Y=Y,
+            filename=mpath(run_name + f"_{i}_grid_comparison.pdf"),
+            title_1=f"A: NN Committor {i}",
+            title_2="B: FEM Committor",
+        )
     exit()
 
 

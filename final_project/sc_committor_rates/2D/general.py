@@ -48,7 +48,7 @@ print("Initial representation of the committor has been trained!")
 
 # Run the optimization
 n_trials = 1
-n_opt_steps = 700
+n_opt_steps =300
 # optimizer = torch.optim.Adam(net.parameters(), lr = 1e-2)
 optimizer2 = torch.optim.Adam(net2.parameters(), lr = 1e-2)
 
@@ -71,15 +71,14 @@ V_surface_min = V_surface_numpy.min()
 K = max_K
 # cmask = torch.arange(max_K) < 2
 cmask = torch.ones(max_K)
-# centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
+centers_k = torch.stack((a_center,b_center,kcenters[1],kcenters[2],kcenters[3]),dim=0)
 # centers_k = torch.stack((a_center,b_center),dim=0)
-
-centers_k = torch.tensor(
-    [[-3., 0], # a
-    [-1.5254, -0.0344],
-    [ 1.4761,  0.0231],
-    [ 3.0, 0.]] # b
-)
+# centers_k = torch.tensor(
+#     [[-3., 0], # a
+#     [-1.5254, -0.0344],
+#     [ 1.4761,  0.0231],
+#     [ 3.0, 0.]] # b
+# )
 ##<\CHANGE THESE PARAMETERS>
 
 

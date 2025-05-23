@@ -3,7 +3,7 @@ import torch
 import os
 import numpy as np
 from matplotlib import cm
-
+from global_utils import max_K, cnmsam
 
 def gen_V_contour(x, y, V_func, nicename, filename, a_center, b_center, committor_file=None, **kwargs):
     X, Y = torch.meshgrid(torch.tensor(x), torch.tensor(y), indexing='ij')
@@ -53,16 +53,17 @@ def evaluate_committor_on_grid(pt_file: str, X: np.ndarray, Y: np.ndarray, model
     # Flatten the grid to shape (N, 2)
     points = np.stack([X.ravel(), Y.ravel()], axis=1)
     inputs = torch.tensor(points, dtype=torch.float32).cpu()
-
     # Load model
-    model = model_class(dim=2)
+    model = model_class(dim=2,K=max_K)
     model.load_state_dict(torch.load(pt_file, map_location='cpu'))
     model.eval()
 
     # Run inference
     with torch.no_grad():
-        output = torch.sigmoid(model(inputs)).cpu().numpy().reshape(X.shape)
-
-    # Save output
-    out_file = os.path.splitext(pt_file)[0] + "_gridnn.npy"
-    np.save(out_file, output)
+        output = cnmsam(model,inputs,torch.ones(max_K)).cpu().numpy()
+        
+    for i in range(max_K):
+        output_i = output[:,i].reshape(X.shape)
+        # Save output
+        out_file = os.path.splitext(pt_file)[0] + f"_{i}_gridnn.npy"
+        np.save(out_file, output_i)

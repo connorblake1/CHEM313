@@ -142,15 +142,17 @@ def compare_committors(a, b, X, Y, filename, eps=1e-8, title_1 ='Committor (Exac
 
 
 class SoftMinPotential(UserExpression):
-    def __init__(self, centers, b, **kwargs):
+    def __init__(self, centers, heights, b, **kwargs):
         super().__init__(**kwargs)
         self.centers = centers  # list of (x,y)
+        self.heights = heights
         self.b = b
     def eval(self, value, x):
         acc = 0.0
-        for cx, cy in self.centers:
+        for i in range(len(self.centers)):
+            cx, cy = self.centers[i]
             dx, dy = x[0]-cx, x[1]-cy
-            acc += math.exp(self.b*(dx*dx+dy*dy))
+            acc += math.exp(self.b*(dx*dx+dy*dy) + self.heights[i])
         value[0] = -math.log(acc)
     def value_shape(self): return ()
 
