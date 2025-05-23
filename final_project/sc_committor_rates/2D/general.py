@@ -419,7 +419,7 @@ for step in range(n_opt_steps):
         norm   = Normalize(vmin=levels.min(), vmax=levels.max())
 
         for k in range(K):
-            data_k   = cnmsam(net2, grid_input, cmask)[..., k].cpu().detach().numpy()
+            data_k   = 1.0 - cnmsam(net2, grid_input, cmask)[..., k].cpu().detach().numpy()
             cs       = axs['a'].contour(
                         X, Y, data_k,
                         levels=levels,
@@ -428,7 +428,7 @@ for step in range(n_opt_steps):
                     )
             mappable = ScalarMappable(norm=norm, cmap=cmaps[k])
             cbar     = fig.colorbar(mappable, ax=axs['a'])
-            cbar.set_label(rf'$q_{{{k}}}$', fontsize=14)
+            cbar.set_label(rf'$p_{{{k}}}$', fontsize=14)
 
         data_reshaped = torch.reshape(running_xs_all, [-1, 2]).detach().numpy()
         

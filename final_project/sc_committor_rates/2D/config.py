@@ -108,13 +108,13 @@ device = torch.device('cpu')
 
 ## Improved General Transition Well
 ##<CHANGE THESE PARAMETERS>
-key = "dist_square"
-key_param = 0
+key = "linear"
+key_param = 5
 run_name = "wells_" + key
 
 run_name = run_name + "_" + str(key_param)
 a_i = 0
-b_i = 3
+b_i = 4
 run_name = run_name + f"_a{a_i}_b{b_i}"
 validation_mode = False # this is for checking FEM solutions and plotting committors, must be run in the fenics conda env not the md_sims one
 ##<\CHANGE THESE PARAMETERS>
@@ -182,13 +182,12 @@ center_dict = {
 }
 
 low_height = torch.tensor([0.0])
-
 mid_height = torch.tensor([0.2])
 
 # heights = [mid_height]*(center_dict[key].shape[1])
 # heights[a_i] = low_height
 # heights[b_i] = low_height # TODO
-heights = [low_height,mid_height,mid_height,low_height]
+heights = [low_height,mid_height,mid_height,mid_height,low_height]
 
 # height_dict = {
 #     "linear": None,
